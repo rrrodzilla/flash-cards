@@ -26,6 +26,7 @@ export default function SessionPage() {
   const [showExitModal, setShowExitModal] = useState(false);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
+  const sessionInitializedRef = useRef<boolean>(false);
 
   const handleTimeout = useCallback(() => {
     if (timerRef.current !== null) {
@@ -71,6 +72,12 @@ export default function SessionPage() {
     }
 
     setUser(loadedUser);
+
+    // Prevent double session creation in React Strict Mode
+    if (sessionInitializedRef.current) {
+      return;
+    }
+    sessionInitializedRef.current = true;
 
     const settings = getSettings();
     const generatedProblems = generateSessionProblems(settings, userId);
