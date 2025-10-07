@@ -5,6 +5,22 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+    setupFiles: [],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      exclude: [
+        'node_modules/',
+        'src/**/*.test.ts',
+        'src/**/*.test.tsx',
+        '**/*.config.ts',
+        '**/*.config.js',
+      ],
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
@@ -63,7 +79,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
       { find: '@', replacement: fileURLToPath(new URL('./src', import.meta.url)) },
     ],
   },
