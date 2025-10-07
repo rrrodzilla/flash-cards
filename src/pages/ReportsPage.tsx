@@ -1,28 +1,335 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Target, Calendar, Award } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { getUser, getSessions } from '../storage';
+import type { Session } from '../types';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from 'recharts';
 
 export default function ReportsPage() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
+  const [sessions, setSessions] = useState<Session[]>([]);
+
+  useEffect(() => {
+    if (!userId) {
+      navigate('/users');
+      return;
+    }
+
+    const loadedUser = getUser(userId);
+    if (!loadedUser) {
+      navigate('/users');
+      return;
+    }
+
+    setUser(loadedUser);
+    const userSessions = getSessions(userId);
+    setSessions(userSessions);
+  }, [userId, navigate]);
+
+  const stats = useMemo(() => {
+    if (sessions.length === 0) {
+      return {
+        totalSessions: 0,
+        totalCards: 0,
+        totalCorrect: 0,
+        totalIncorrect: 0,
+        avgScore: 0,
+        bestScore: 0,
+        avgTime: 0,
+      };
+    }
+
+    const totalCards = sessions.reduce((sum, s) => sum + s.totalCards, 0);
+    const totalCorrect = sessions.reduce((sum, s) => sum + s.score, 0);
+    const totalIncorrect = totalCards - totalCorrect;
+    const avgScore = totalCards > 0 ? Math.round((totalCorrect / totalCards) * 100) : 0;
+    const bestScore = Math.max(
+      ...sessions.map((s) => (s.totalCards > 0 ? (s.score / s.totalCards) * 100 : 0))
+    );
+
+    const completedSessions = sessions.filter((s) => !s.timedOut && s.finishTime);
+    const avgTime =
+      completedSessions.length > 0
+        ? Math.round(
+            completedSessions.reduce((sum, s) => sum + (s.finishTime || 0), 0) /
+              completedSessions.length
+          )
+        : 0;
+
+    return {
+      totalSessions: sessions.length,
+      totalCards,
+      totalCorrect,
+      totalIncorrect,
+      avgScore,
+      bestScore: Math.round(bestScore),
+      avgTime,
+    };
+  }, [sessions]);
+
+  const scoreOverTimeData = useMemo(() => {
+    return sessions
+      .slice()
+      .reverse()
+      .map((session, index) => ({
+        session: index + 1,
+        score: session.totalCards > 0 ? Math.round((session.score / session.totalCards) * 100) : 0,
+        date: new Date(session.timestamp).toLocaleDateString(),
+      }));
+  }, [sessions]);
+
+  const missedNumbersData = useMemo(() => {
+    const numberFrequencies: Record<number, number> = {};
+
+    for (let i = 1; i <= 12; i++) {
+      numberFrequencies[i] = 0;
+    }
+
+    sessions.forEach((session) => {
+      session.cards.forEach((card) => {
+        if (!card.isCorrect) {
+          numberFrequencies[card.operand1] = (numberFrequencies[card.operand1] || 0) + 1;
+          numberFrequencies[card.operand2] = (numberFrequencies[card.operand2] || 0) + 1;
+        }
+      });
+    });
+
+    return Object.entries(numberFrequencies)
+      .map(([num, count]) => ({
+        number: parseInt(num),
+        mistakes: count,
+      }))
+      .sort((a, b) => b.mistakes - a.mistakes);
+  }, [sessions]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  if (!user) {
+    return null;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <header className="bg-white shadow-sm border-b-2 border-blue-100">
         <div className="flex items-center gap-4 p-4">
           <button
             onClick={() => navigate('/users')}
-            className="touch-target p-2 hover:bg-gray-100 rounded-lg transition-smooth"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 hover:bg-gray-100 rounded-xl transition-all active:scale-95 focus:outline-none focus:ring-4 focus:ring-blue-300"
             aria-label="Go back to users"
           >
             <ArrowLeft size={24} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">Reports</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{user.name}'s Reports</h1>
+            <p className="text-sm text-gray-600">Performance statistics and insights</p>
+          </div>
         </div>
       </header>
 
-      <main className="p-4">
-        <p className="text-gray-600">Reports page for user: {userId}</p>
-        <p className="text-gray-600 mt-2">To be implemented</p>
+      <main className="p-4 max-w-6xl mx-auto">
+        {sessions.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="text-6xl mb-4">📊</div>
+            <h2 className="text-2xl font-bold text-gray-700 mb-2">No sessions yet</h2>
+            <p className="text-gray-500 mb-6">
+              Complete some practice sessions to see your stats!
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-blue-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <Calendar size={24} className="text-blue-600" />
+                  <p className="text-sm font-semibold text-gray-600">Sessions</p>
+                </div>
+                <p className="text-4xl font-black text-blue-600 tabular-nums">
+                  {stats.totalSessions}
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-green-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <Target size={24} className="text-green-600" />
+                  <p className="text-sm font-semibold text-gray-600">Avg Score</p>
+                </div>
+                <p className="text-4xl font-black text-green-600 tabular-nums">
+                  {stats.avgScore}%
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-purple-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <Award size={24} className="text-purple-600" />
+                  <p className="text-sm font-semibold text-gray-600">Best Score</p>
+                </div>
+                <p className="text-4xl font-black text-purple-600 tabular-nums">
+                  {stats.bestScore}%
+                </p>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-orange-200">
+                <div className="flex items-center gap-3 mb-2">
+                  <TrendingUp size={24} className="text-orange-600" />
+                  <p className="text-sm font-semibold text-gray-600">Avg Time</p>
+                </div>
+                <p className="text-4xl font-black text-orange-600 tabular-nums">
+                  {formatTime(stats.avgTime)}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Score Trend</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={scoreOverTimeData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="session"
+                      label={{ value: 'Session', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      label={{ value: 'Score %', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => [`${value}%`, 'Score']}
+                      labelFormatter={(label) => `Session ${label}`}
+                    />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="score"
+                      stroke="#3B82F6"
+                      strokeWidth={3}
+                      dot={{ fill: '#3B82F6', r: 6 }}
+                      activeDot={{ r: 8 }}
+                      name="Score %"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Most Missed Numbers</h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={missedNumbersData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="number"
+                      label={{ value: 'Number', position: 'insideBottom', offset: -5 }}
+                    />
+                    <YAxis label={{ value: 'Mistakes', angle: -90, position: 'insideLeft' }} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar
+                      dataKey="mistakes"
+                      fill="#EF4444"
+                      name="Mistakes"
+                      radius={[8, 8, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Session History</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-gray-200">
+                      <th className="text-left py-3 px-4 font-bold text-gray-700">Date</th>
+                      <th className="text-left py-3 px-4 font-bold text-gray-700">Score</th>
+                      <th className="text-left py-3 px-4 font-bold text-gray-700">Cards</th>
+                      <th className="text-left py-3 px-4 font-bold text-gray-700">Time</th>
+                      <th className="text-left py-3 px-4 font-bold text-gray-700">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sessions.map((session) => {
+                      const percentage =
+                        session.totalCards > 0
+                          ? Math.round((session.score / session.totalCards) * 100)
+                          : 0;
+
+                      return (
+                        <tr
+                          key={session.sessionId}
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="py-3 px-4 text-gray-900 font-semibold">
+                            {formatDate(session.timestamp)}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span
+                              className={`font-bold ${
+                                percentage >= 90
+                                  ? 'text-green-600'
+                                  : percentage >= 75
+                                  ? 'text-blue-600'
+                                  : percentage >= 60
+                                  ? 'text-yellow-600'
+                                  : 'text-red-600'
+                              }`}
+                            >
+                              {session.score}/{session.totalCards}
+                            </span>
+                            <span className="text-gray-500 ml-2">({percentage}%)</span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-900 font-semibold">
+                            {session.totalCards}
+                          </td>
+                          <td className="py-3 px-4 text-gray-900 font-semibold">
+                            {session.finishTime
+                              ? formatTime(session.finishTime)
+                              : session.timedOut
+                              ? 'Timeout'
+                              : '-'}
+                          </td>
+                          <td className="py-3 px-4">
+                            {session.timedOut ? (
+                              <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-semibold">
+                                Incomplete
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                                Complete
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
+        )}
       </main>
     </div>
   );
