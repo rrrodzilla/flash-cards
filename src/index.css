@@ -72,3 +72,291 @@ textarea {
 .transition-smooth {
   transition: all 0.2s ease-in-out;
 }
+
+/* Child-friendly slider styles */
+.slider-container {
+  position: relative;
+  width: 100%;
+}
+
+.slider-value-bubble {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-weight: bold;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+.slider-value-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: #2563eb;
+}
+
+/* Custom range slider styling - WebKit/Blink */
+input[type="range"].child-friendly-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 16px;
+  border-radius: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"].child-friendly-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+  border: 4px solid white;
+  transition: all 0.2s ease;
+}
+
+input[type="range"].child-friendly-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.6);
+}
+
+input[type="range"].child-friendly-slider::-webkit-slider-thumb:active {
+  transform: scale(1.15);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.7);
+}
+
+/* Custom range slider styling - Firefox */
+input[type="range"].child-friendly-slider::-moz-range-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+  border: 4px solid white;
+  transition: all 0.2s ease;
+}
+
+input[type="range"].child-friendly-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.6);
+}
+
+input[type="range"].child-friendly-slider::-moz-range-thumb:active {
+  transform: scale(1.15);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.7);
+}
+
+/* Purple variant for time slider */
+input[type="range"].child-friendly-slider.purple-variant {
+  background: #e9d5ff;
+}
+
+input[type="range"].child-friendly-slider.purple-variant::-webkit-slider-thumb {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.5);
+}
+
+input[type="range"].child-friendly-slider.purple-variant::-webkit-slider-thumb:hover {
+  box-shadow: 0 6px 16px rgba(168, 85, 247, 0.6);
+}
+
+input[type="range"].child-friendly-slider.purple-variant::-webkit-slider-thumb:active {
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.7);
+}
+
+input[type="range"].child-friendly-slider.purple-variant::-moz-range-thumb {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.5);
+}
+
+input[type="range"].child-friendly-slider.purple-variant::-moz-range-thumb:hover {
+  box-shadow: 0 6px 16px rgba(168, 85, 247, 0.6);
+}
+
+input[type="range"].child-friendly-slider.purple-variant::-moz-range-thumb:active {
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.7);
+}
+
+.purple-bubble {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.purple-bubble::after {
+  border-top-color: #9333ea;
+}
+
+/* Celebration Animations */
+
+/* Star burst animation for correct answers */
+@keyframes starBurst {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.5) rotate(180deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Rainbow confetti for perfect scores */
+@keyframes rainbowConfetti {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0.8;
+  }
+}
+
+/* Sparkles animation for good scores */
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+    transform: scale(0) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(180deg);
+  }
+}
+
+/* Growth animation for encouraging scores */
+@keyframes grow {
+  0% {
+    transform: scale(0) translateY(20px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1) translateY(-10px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Pulse animation for milestones */
+@keyframes milestonePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.8;
+  }
+}
+
+/* Fireworks animation for perfect scores */
+@keyframes fireworks {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--tx), var(--ty)) scale(1);
+    opacity: 0;
+  }
+}
+
+/* Card scale pulse for correct answers */
+@keyframes cardPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Shake animation for incorrect answers */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+/* Utility classes for animations */
+.animate-starBurst {
+  animation: starBurst 1s ease-out forwards;
+}
+
+.animate-rainbowConfetti {
+  animation: rainbowConfetti 3s linear infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle 1.5s ease-in-out infinite;
+}
+
+.animate-grow {
+  animation: grow 0.6s ease-out forwards;
+}
+
+.animate-milestonePulse {
+  animation: milestonePulse 0.5s ease-in-out;
+}
+
+.animate-fireworks {
+  animation: fireworks 1s ease-out forwards;
+}
+
+.animate-cardPulse {
+  animation: cardPulse 0.3s ease-in-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-starBurst,
+  .animate-rainbowConfetti,
+  .animate-sparkle,
+  .animate-grow,
+  .animate-milestonePulse,
+  .animate-fireworks,
+  .animate-cardPulse,
+  .animate-shake {
+    animation: none;
+  }
+
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

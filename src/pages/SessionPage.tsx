@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, Check, AlertTriangle } from 'lucide-react';
+import { X, Check, AlertTriangle, Star } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getUser, getSettings, createSession, updateSession } from '../storage';
 import { generateSessionProblems } from '../algorithms/weightedRandom';
 import type { Card } from '../types';
-import { NumberPad, Timer, Modal, Button } from '../components';
+import { NumberPad, Timer, Modal, Button, ConfettiOverlay, SkipLink } from '../components';
+import { StarBurst } from '../components/StarBurst';
 
 interface SessionCard extends Omit<Card, 'userAnswer' | 'isCorrect'> {
   userAnswer?: number;
@@ -24,6 +25,10 @@ export default function SessionPage() {
   const [score, setScore] = useState(0);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
   const [showExitModal, setShowExitModal] = useState(false);
+  const [showStarBurst, setShowStarBurst] = useState(false);
+  const [showStreakConfetti, setShowStreakConfetti] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [milestoneReached, setMilestoneReached] = useState<number | null>(null);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   const sessionInitializedRef = useRef<boolean>(false);
@@ -157,9 +162,32 @@ export default function SessionPage() {
     if (isCorrect) {
       setScore((prev) => prev + 1);
       setFeedback('correct');
+      setShowStarBurst(true);
+
+      setStreak((prev) => {
+        const newStreak = prev + 1;
+        if (newStreak >= 3) {
+          setShowStreakConfetti(true);
+        }
+        return newStreak;
+      });
+
+      const newProgress = ((currentCardIndex + 1) / cards.length) * 100;
+      const milestones = [25, 50, 75, 100];
+      const reachedMilestone = milestones.find(
+        (m) => newProgress >= m && ((currentCardIndex / cards.length) * 100) < m
+      );
+
+      if (reachedMilestone) {
+        setMilestoneReached(reachedMilestone);
+        setTimeout(() => setMilestoneReached(null), 1000);
+      }
     } else {
       setFeedback('incorrect');
+      setStreak(0);
     }
+
+    const feedbackDelay = isCorrect ? 1500 : 2500;
 
     setTimeout(() => {
       setFeedback(null);
@@ -170,7 +198,7 @@ export default function SessionPage() {
       } else {
         setCurrentCardIndex((prev) => prev + 1);
       }
-    }, 1000);
+    }, feedbackDelay);
   }, [answer, currentCardIndex, cards, feedback, handleSessionComplete]);
 
   const handleExit = () => {
@@ -200,6 +228,7 @@ export default function SessionPage() {
 
   const currentCard = cards[currentCardIndex];
   const progress = cards.length > 0 ? ((currentCardIndex + 1) / cards.length) * 100 : 0;
+  const milestones = [25, 50, 75, 100];
 
   if (!user || !currentCard) {
     return (
@@ -214,6 +243,7 @@ export default function SessionPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex flex-col">
+      <SkipLink />
       <header className="bg-white shadow-sm border-b-2 border-blue-100 p-4">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center gap-4">
@@ -233,17 +263,24 @@ export default function SessionPage() {
           </div>
 
           <div className="text-right">
-            <div className="text-2xl font-black text-blue-600 tabular-nums">
+            <div
+              className="text-2xl font-black text-blue-600 tabular-nums"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={`Current score: ${score} out of ${cards.length}`}
+            >
               {score}/{cards.length}
             </div>
             <p className="text-xs text-gray-600">Score</p>
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto mt-4">
+        <div className="max-w-4xl mx-auto mt-4 relative">
           <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out"
+              className={`h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out ${
+                milestoneReached ? 'animate-milestonePulse' : ''
+              }`}
               style={{ width: `${progress}%` }}
               role="progressbar"
               aria-valuenow={currentCardIndex + 1}
@@ -252,12 +289,37 @@ export default function SessionPage() {
               aria-label={`Progress: ${currentCardIndex + 1} of ${cards.length} cards`}
             />
           </div>
+
+          {milestones.map((milestone) => {
+            const milestonePosition = milestone;
+            const isPassed = progress >= milestone;
+
+            return (
+              <div
+                key={milestone}
+                className="absolute top-0 transform -translate-y-1/2"
+                style={{ left: `${milestonePosition}%` }}
+              >
+                <Star
+                  size={20}
+                  className={`transform -translate-x-1/2 transition-all duration-300 ${
+                    isPassed
+                      ? 'text-yellow-500 fill-yellow-500 scale-110'
+                      : 'text-gray-400'
+                  } ${
+                    milestoneReached === milestone ? 'animate-milestonePulse' : ''
+                  }`}
+                  aria-label={`${milestone}% milestone ${isPassed ? 'reached' : 'not reached'}`}
+                />
+              </div>
+            );
+          })}
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col items-center justify-center p-4">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col items-center justify-center p-4">
         <div className="w-full max-w-2xl mx-auto space-y-8">
-          <div className="mb-8">
+          <div className="mb-8" aria-live="polite" aria-atomic="true">
             <Timer
               totalSeconds={totalTime}
               remainingSeconds={timeRemaining}
@@ -267,14 +329,22 @@ export default function SessionPage() {
           </div>
 
           <div
-            className={`bg-white rounded-3xl shadow-2xl p-8 border-4 transition-all duration-300 ${
+            className={`bg-white rounded-3xl shadow-2xl p-8 border-4 transition-all duration-300 relative ${
               feedback === 'correct'
-                ? 'border-green-500 bg-green-50'
+                ? 'border-green-500 bg-green-50 animate-cardPulse'
                 : feedback === 'incorrect'
-                ? 'border-red-500 bg-red-50'
+                ? 'border-red-500 bg-red-50 animate-shake'
                 : 'border-blue-200'
             }`}
           >
+            {showStarBurst && (
+              <StarBurst
+                isActive={showStarBurst}
+                onComplete={() => setShowStarBurst(false)}
+                duration={1000}
+                starCount={12}
+              />
+            )}
             <div className="text-center mb-8">
               <p className="text-gray-600 text-xl mb-4 font-semibold">What is</p>
               <div className="text-8xl font-black text-gray-900 mb-4 tabular-nums">
@@ -290,11 +360,14 @@ export default function SessionPage() {
                     ? 'bg-green-100 text-green-700'
                     : 'bg-red-100 text-red-700'
                 }`}
+                role="alert"
+                aria-live="assertive"
+                aria-atomic="true"
               >
                 {feedback === 'correct' ? (
                   <>
                     <Check size={28} />
-                    <span>Correct!</span>
+                    <span>Correct! {streak >= 3 && `🔥 ${streak} in a row!`}</span>
                   </>
                 ) : (
                   <>
@@ -314,6 +387,13 @@ export default function SessionPage() {
           </div>
         </div>
       </main>
+
+      <ConfettiOverlay
+        isActive={showStreakConfetti}
+        duration={2000}
+        pieceCount={30}
+        onComplete={() => setShowStreakConfetti(false)}
+      />
 
       <Modal
         isOpen={showExitModal}
