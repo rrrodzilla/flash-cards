@@ -97,7 +97,8 @@ export default function SessionPage() {
         clearInterval(timerRef.current);
       }
     };
-  }, [userId, navigate, handleTimeout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, navigate]);
 
   const handleSessionComplete = useCallback((completedCards: Card[]) => {
     if (timerRef.current !== null) {
