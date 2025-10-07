@@ -1,36 +1,74 @@
 /**
  * Weighted randomization algorithm for flash card generation.
- * Uses max heap to weight numbers based on wrong answer frequencies.
+ *
+ * This module implements intelligent problem generation that adapts to user performance:
+ * - Analyzes wrong answers from past sessions (up to 3 most recent)
+ * - Uses max heap to prioritize frequently missed numbers
+ * - Falls back to pure random when no wrong answers exist
+ * - Ensures problem uniqueness within a session
+ *
+ * Algorithm:
+ * 1. Extract wrong answer frequencies from last 3 sessions
+ * 2. Build frequency map (number -> count of appearances in wrong answers)
+ * 3. Use weighted random selection where higher frequency = higher probability
+ * 4. Generate unique problems until session target is met
  */
 
-import { MaxHeap } from './heap';
 import type { Session, Card, Settings } from '../types';
 import { getLastNSessions } from '../storage';
 
 /**
  * Analyze wrong answers from sessions and count frequency of each number (1-12).
  *
- * @param sessions - Array of session objects to analyze
- * @returns Map of number to frequency count
+ * This function extracts both operands from incorrectly answered problems and counts
+ * how many times each number appears. Numbers appearing in more wrong answers will
+ * have higher frequencies, indicating areas where the user needs more practice.
+ *
+ * @param sessions - Array of session objects to analyze (typically last 3 sessions)
+ * @returns Map of number (1-12) to frequency count
+ *
+ * @example
+ * ```typescript
+ * const sessions = getLastNSessions(userId, 3);
+ * const frequencies = analyzeWrongAnswers(sessions);
+ * // frequencies.get(2) might return 5 if number 2 appeared in 5 wrong answers
+ * ```
+ *
+ * Time complexity: O(n * m) where n = number of sessions, m = cards per session
+ * Space complexity: O(1) - fixed map size of 12 elements
  */
 export function analyzeWrongAnswers(sessions: Session[]): Map<number, number> {
+  if (!sessions || !Array.isArray(sessions)) {
+    console.warn('[WeightedRandom] Invalid sessions array provided');
+    return createEmptyFrequencyMap();
+  }
+
   const frequencies = new Map<number, number>();
 
-  // Initialize all numbers 1-12 with frequency 0
   for (let i = 1; i <= 12; i++) {
     frequencies.set(i, 0);
   }
 
-  // Count occurrences of each number in wrong answers
   for (const session of sessions) {
-    for (const card of session.cards) {
-      if (!card.isCorrect) {
-        // Increment frequency for both operands
-        const freq1 = frequencies.get(card.operand1) || 0;
-        frequencies.set(card.operand1, freq1 + 1);
+    if (!session || !session.cards || !Array.isArray(session.cards)) {
+      continue;
+    }
 
-        const freq2 = frequencies.get(card.operand2) || 0;
-        frequencies.set(card.operand2, freq2 + 1);
+    for (const card of session.cards) {
+      if (!card || typeof card.isCorrect !== 'boolean') {
+        continue;
+      }
+
+      if (!card.isCorrect) {
+        if (isValidNumber(card.operand1)) {
+          const freq1 = frequencies.get(card.operand1) || 0;
+          frequencies.set(card.operand1, freq1 + 1);
+        }
+
+        if (isValidNumber(card.operand2)) {
+          const freq2 = frequencies.get(card.operand2) || 0;
+          frequencies.set(card.operand2, freq2 + 1);
+        }
       }
     }
   }
@@ -39,94 +77,163 @@ export function analyzeWrongAnswers(sessions: Session[]): Map<number, number> {
 }
 
 /**
+ * Helper function to create an empty frequency map with all numbers initialized to 0.
+ */
+function createEmptyFrequencyMap(): Map<number, number> {
+  const map = new Map<number, number>();
+  for (let i = 1; i <= 12; i++) {
+    map.set(i, 0);
+  }
+  return map;
+}
+
+/**
+ * Validates that a number is within the valid range (1-12) for multiplication tables.
+ */
+function isValidNumber(num: unknown): num is number {
+  return typeof num === 'number' && Number.isInteger(num) && num >= 1 && num <= 12;
+}
+
+/**
  * Generate a weighted random problem based on wrong answer frequencies.
- * Numbers with higher frequencies are more likely to be selected.
  *
- * @param includedNumbers - Array of numbers to include in problem generation
+ * This function creates a multiplication problem where numbers that appear more
+ * frequently in wrong answers have a higher probability of being selected.
+ *
+ * Strategy:
+ * - If no wrong answers exist in recent sessions -> pure random selection
+ * - If wrong answers exist -> weighted selection based on frequency
+ * - Each operand is selected independently (allows same number to appear twice, e.g., 7×7)
+ *
+ * @param includedNumbers - Array of numbers to include in problem generation (from settings)
  * @param wrongAnswerFrequencies - Map of number to frequency from wrong answers
- * @returns Object with operand1 and operand2
+ * @returns Object with operand1 and operand2 for the multiplication problem
+ * @throws {Error} If includedNumbers is empty or invalid
+ *
+ * @example
+ * ```typescript
+ * const problem = generateWeightedProblem(
+ *   [1, 2, 3, 4, 5],
+ *   new Map([[2, 10], [3, 5], [1, 0], [4, 0], [5, 0]])
+ * );
+ * // More likely to generate problems with 2 and 3 (e.g., 2×3, 3×2, 2×2, etc.)
+ * ```
+ *
+ * Time complexity: O(n) where n = includedNumbers.length
+ * Space complexity: O(n) for weights array
  */
 export function generateWeightedProblem(
   includedNumbers: number[],
   wrongAnswerFrequencies: Map<number, number>
 ): { operand1: number; operand2: number } {
-  // Check if any wrong answers exist in included numbers
-  const hasWrongAnswers = includedNumbers.some(num => {
+  if (!includedNumbers || !Array.isArray(includedNumbers) || includedNumbers.length === 0) {
+    throw new Error('includedNumbers must be a non-empty array');
+  }
+
+  if (!wrongAnswerFrequencies || !(wrongAnswerFrequencies instanceof Map)) {
+    throw new Error('wrongAnswerFrequencies must be a Map');
+  }
+
+  const validNumbers = includedNumbers.filter(isValidNumber);
+  if (validNumbers.length === 0) {
+    throw new Error('includedNumbers must contain at least one valid number (1-12)');
+  }
+
+  const hasWrongAnswers = validNumbers.some(num => {
     const freq = wrongAnswerFrequencies.get(num) || 0;
     return freq > 0;
   });
 
-  // If no wrong answers, use pure random
   if (!hasWrongAnswers) {
-    const operand1 = includedNumbers[Math.floor(Math.random() * includedNumbers.length)];
-    const operand2 = includedNumbers[Math.floor(Math.random() * includedNumbers.length)];
+    const operand1 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
+    const operand2 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
 
     if (operand1 === undefined || operand2 === undefined) {
-      throw new Error('Invalid included numbers array');
+      throw new Error('Failed to select random operands');
     }
 
     return { operand1, operand2 };
   }
 
-  // Build max heap with frequencies
-  const heap = new MaxHeap<number>();
-
-  for (const num of includedNumbers) {
-    const frequency = wrongAnswerFrequencies.get(num) || 0;
-    // Add with frequency as priority
-    // If frequency is 0, add with priority 0 so it's less likely to be selected
-    heap.insert(num, frequency);
-  }
-
-  // Select operands using weighted random selection
-  const operand1 = selectWeightedRandom(includedNumbers, wrongAnswerFrequencies);
-  const operand2 = selectWeightedRandom(includedNumbers, wrongAnswerFrequencies);
+  const operand1 = selectWeightedRandom(validNumbers, wrongAnswerFrequencies);
+  const operand2 = selectWeightedRandom(validNumbers, wrongAnswerFrequencies);
 
   return { operand1, operand2 };
 }
 
 /**
- * Select a random number weighted by its frequency.
- * Higher frequency numbers have higher probability of selection.
+ * Select a random number weighted by its frequency using weighted random sampling.
+ *
+ * This implements a weighted random selection algorithm where each number's
+ * probability of selection is proportional to its frequency + 1.
+ * The +1 ensures that even numbers with 0 frequency have a small chance of selection.
+ *
+ * Algorithm:
+ * 1. Calculate weight for each number: weight = frequency + 1
+ * 2. Calculate total weight (sum of all weights)
+ * 3. Generate random number in range [0, totalWeight)
+ * 4. Iterate through numbers, subtracting weights until random <= 0
+ * 5. Return the number where the random point landed
+ *
+ * @param numbers - Array of numbers to select from
+ * @param frequencies - Map of number to frequency count
+ * @returns Selected number
+ * @throws {Error} If numbers array is empty or invalid
+ *
+ * @example
+ * ```typescript
+ * // Number 2 has frequency 10, number 3 has frequency 5, others have 0
+ * // Weights: 2->11, 3->6, others->1
+ * // Number 2 is 11x more likely than numbers with frequency 0
+ * const selected = selectWeightedRandom([1,2,3,4,5], frequencies);
+ * ```
+ *
+ * Time complexity: O(n) where n = numbers.length
+ * Space complexity: O(n) for weights array
  */
 function selectWeightedRandom(
   numbers: number[],
   frequencies: Map<number, number>
 ): number {
-  // Calculate total weight
+  if (numbers.length === 0) {
+    throw new Error('Cannot select from empty numbers array');
+  }
+
   let totalWeight = 0;
   const weights: number[] = [];
 
   for (const num of numbers) {
     const freq = frequencies.get(num) || 0;
-    // Use frequency + 1 to ensure even numbers with 0 frequency have some chance
     const weight = freq + 1;
     weights.push(weight);
     totalWeight += weight;
   }
 
-  // Select random point in total weight range
+  if (totalWeight === 0) {
+    throw new Error('Total weight cannot be zero');
+  }
+
   let random = Math.random() * totalWeight;
 
-  // Find which number the random point falls into
   for (let i = 0; i < numbers.length; i++) {
     const weight = weights[i];
-    if (weight === undefined) continue;
+    if (weight === undefined) {
+      continue;
+    }
 
     random -= weight;
     if (random <= 0) {
       const num = numbers[i];
       if (num === undefined) {
-        throw new Error('Invalid numbers array');
+        throw new Error('Invalid numbers array index');
       }
       return num;
     }
   }
 
-  // Fallback (should never reach here)
   const lastNum = numbers[numbers.length - 1];
   if (lastNum === undefined) {
-    throw new Error('Invalid numbers array');
+    throw new Error('Numbers array is invalid');
   }
   return lastNum;
 }
@@ -134,51 +241,85 @@ function selectWeightedRandom(
 /**
  * Generate a complete set of session problems using weighted randomization.
  *
+ * This is the main entry point for problem generation. It:
+ * 1. Fetches the user's last 3 sessions from storage
+ * 2. Analyzes wrong answers to build frequency map
+ * 3. Generates unique problems using weighted randomization
+ * 4. Falls back to pure random if weighted generation can't produce enough unique problems
+ * 5. Shuffles problems to randomize order
+ *
  * @param settings - Settings object containing includedNumbers and cardsPerSession
  * @param userId - ID of the user for whom to generate problems
- * @returns Array of Card objects (without userAnswer filled)
+ * @returns Array of Card objects (without userAnswer and isCorrect fields - filled during session)
+ * @throws {Error} If settings are invalid or userId is empty
+ *
+ * @example
+ * ```typescript
+ * const settings = { includedNumbers: [1,2,3,4,5], cardsPerSession: 20, timeLimit: 300 };
+ * const problems = generateSessionProblems(settings, 'user-123');
+ * // Returns 20 unique problems like: [{ problem: '2×3', operand1: 2, operand2: 3, correctAnswer: 6 }, ...]
+ * ```
+ *
+ * Time complexity: O(n * log n) where n = cardsPerSession (due to shuffle)
+ * Space complexity: O(n) for cards array and problem set
  */
 export function generateSessionProblems(
   settings: Settings,
   userId: string
 ): Omit<Card, 'userAnswer' | 'isCorrect'>[] {
+  if (!settings || typeof settings !== 'object') {
+    throw new Error('Settings must be a valid object');
+  }
+
+  if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+    throw new Error('User ID must be a non-empty string');
+  }
+
   const { includedNumbers, cardsPerSession } = settings;
 
-  // Validate settings
-  if (!includedNumbers || includedNumbers.length === 0) {
+  if (!includedNumbers || !Array.isArray(includedNumbers) || includedNumbers.length === 0) {
     throw new Error('No numbers included in settings');
   }
 
-  if (cardsPerSession <= 0) {
-    throw new Error('Invalid cardsPerSession value');
+  if (!Number.isInteger(cardsPerSession) || cardsPerSession <= 0) {
+    throw new Error('cardsPerSession must be a positive integer');
   }
 
-  // Get last 3 sessions for the user
-  const recentSessions = getLastNSessions(userId, 3);
+  if (cardsPerSession > 1000) {
+    throw new Error('cardsPerSession cannot exceed 1000');
+  }
 
-  // Analyze wrong answers
+  const validNumbers = includedNumbers.filter(isValidNumber);
+  if (validNumbers.length === 0) {
+    throw new Error('Settings must include at least one valid number (1-12)');
+  }
+
+  const maxPossibleUnique = validNumbers.length * validNumbers.length;
+  if (cardsPerSession > maxPossibleUnique) {
+    console.warn(
+      `[WeightedRandom] Requested ${cardsPerSession} cards but only ${maxPossibleUnique} unique combinations possible. Generating maximum possible.`
+    );
+  }
+
+  const recentSessions = getLastNSessions(userId, 3);
   const wrongAnswerFrequencies = analyzeWrongAnswers(recentSessions);
 
-  // Generate problems
   const cards: Omit<Card, 'userAnswer' | 'isCorrect'>[] = [];
   const problemSet = new Set<string>();
 
-  // Generate unique problems
   let attempts = 0;
-  const maxAttempts = cardsPerSession * 10; // Prevent infinite loop
+  const maxAttempts = Math.min(cardsPerSession * 10, 10000);
 
   while (cards.length < cardsPerSession && attempts < maxAttempts) {
     attempts++;
 
     const { operand1, operand2 } = generateWeightedProblem(
-      includedNumbers,
+      validNumbers,
       wrongAnswerFrequencies
     );
 
-    // Create normalized problem key (ensure 2×3 and 3×2 are treated as different)
     const problemKey = `${operand1}×${operand2}`;
 
-    // Skip if this exact problem already exists
     if (problemSet.has(problemKey)) {
       continue;
     }
@@ -195,13 +336,12 @@ export function generateSessionProblems(
     problemSet.add(problemKey);
   }
 
-  // If we couldn't generate enough unique problems, fill remaining with random
   while (cards.length < cardsPerSession) {
-    const operand1 = includedNumbers[Math.floor(Math.random() * includedNumbers.length)];
-    const operand2 = includedNumbers[Math.floor(Math.random() * includedNumbers.length)];
+    const operand1 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
+    const operand2 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
 
     if (operand1 === undefined || operand2 === undefined) {
-      throw new Error('Invalid included numbers array');
+      break;
     }
 
     const problemKey = `${operand1}×${operand2}`;
@@ -215,16 +355,48 @@ export function generateSessionProblems(
       });
       problemSet.add(problemKey);
     }
+
+    if (problemSet.size >= maxPossibleUnique) {
+      break;
+    }
   }
 
-  // Shuffle the cards to ensure randomness in order
+  if (cards.length < cardsPerSession) {
+    console.warn(
+      `[WeightedRandom] Could only generate ${cards.length} unique problems out of ${cardsPerSession} requested`
+    );
+  }
+
   return shuffleArray(cards);
 }
 
 /**
  * Fisher-Yates shuffle algorithm for array randomization.
+ *
+ * Shuffles array elements in-place (on a copy) to ensure random order.
+ * This is the optimal unbiased shuffling algorithm.
+ *
+ * Algorithm:
+ * 1. Start from the last element
+ * 2. Pick a random index from 0 to current position
+ * 3. Swap current element with randomly selected element
+ * 4. Move to previous position and repeat
+ *
+ * @param array - Array to shuffle
+ * @returns New shuffled array (original array is not modified)
+ *
+ * Time complexity: O(n) where n = array.length
+ * Space complexity: O(n) for the copy
  */
 function shuffleArray<T>(array: T[]): T[] {
+  if (!array || !Array.isArray(array)) {
+    return [];
+  }
+
+  if (array.length <= 1) {
+    return [...array];
+  }
+
   const shuffled = [...array];
 
   for (let i = shuffled.length - 1; i > 0; i--) {
