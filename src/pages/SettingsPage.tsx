@@ -3,7 +3,7 @@ import { ArrowLeft, Save, Trash2, AlertTriangle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getSettings, updateSettings, clearAllData, StorageError } from '../storage';
 import type { Settings } from '../types';
-import { Button, Modal } from '../components';
+import { Button, Modal, SkipLink } from '../components';
 import { useApp } from '../context';
 
 export default function SettingsPage() {
@@ -14,6 +14,8 @@ export default function SettingsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCardsBubble, setShowCardsBubble] = useState(false);
+  const [showTimeBubble, setShowTimeBubble] = useState(false);
 
   useEffect(() => {
     const currentSettings = getSettings();
@@ -99,6 +101,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <SkipLink />
       <header className="bg-white shadow-sm border-b-2 border-blue-100">
         <div className="flex items-center gap-4 p-4">
           <button
@@ -112,7 +115,7 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main className="p-4 max-w-2xl mx-auto">
+      <main id="main-content" tabIndex={-1} className="p-4 max-w-2xl mx-auto">
         {error && (
           <div className="mb-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 font-semibold flex items-center gap-2">
             <AlertTriangle size={20} />
@@ -180,53 +183,90 @@ export default function SettingsPage() {
             Session Settings
           </h2>
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             <div>
               <label
                 htmlFor="cardsPerSession"
-                className="block text-lg font-bold text-gray-800 mb-2"
+                className="block text-lg font-bold text-gray-800 mb-4"
               >
-                Cards per Session: {settings.cardsPerSession}
+                Cards per Session
               </label>
-              <input
-                id="cardsPerSession"
-                type="range"
-                min="10"
-                max="100"
-                step="5"
-                value={settings.cardsPerSession}
-                onChange={(e) => handleCardsPerSessionChange(e.target.value)}
-                className="w-full h-3 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                aria-label="Cards per session"
-              />
-              <div className="flex justify-between text-sm text-gray-600 mt-1">
-                <span>10</span>
-                <span>100</span>
+              <div className="slider-container relative pt-4 pb-2">
+                {showCardsBubble && (
+                  <div
+                    className="slider-value-bubble"
+                    style={{
+                      left: `${((settings.cardsPerSession - 10) / (100 - 10)) * 100}%`,
+                    }}
+                  >
+                    {settings.cardsPerSession}
+                  </div>
+                )}
+                <input
+                  id="cardsPerSession"
+                  type="range"
+                  min="10"
+                  max="100"
+                  step="5"
+                  value={settings.cardsPerSession}
+                  onChange={(e) => handleCardsPerSessionChange(e.target.value)}
+                  onMouseDown={() => setShowCardsBubble(true)}
+                  onMouseUp={() => setShowCardsBubble(false)}
+                  onTouchStart={() => setShowCardsBubble(true)}
+                  onTouchEnd={() => setShowCardsBubble(false)}
+                  className="child-friendly-slider bg-blue-200"
+                  aria-label="Cards per session"
+                  aria-valuemin={10}
+                  aria-valuemax={100}
+                  aria-valuenow={settings.cardsPerSession}
+                />
+              </div>
+              <div className="flex justify-between text-base text-gray-600 mt-2 font-semibold">
+                <span>10 cards</span>
+                <span>100 cards</span>
               </div>
             </div>
 
             <div>
               <label
                 htmlFor="timeLimit"
-                className="block text-lg font-bold text-gray-800 mb-2"
+                className="block text-lg font-bold text-gray-800 mb-4"
               >
-                Time Limit: {Math.floor(settings.timeLimit / 60)} minute
-                {Math.floor(settings.timeLimit / 60) !== 1 ? 's' : ''}
+                Time Limit
               </label>
-              <input
-                id="timeLimit"
-                type="range"
-                min="1"
-                max="30"
-                step="1"
-                value={Math.floor(settings.timeLimit / 60)}
-                onChange={(e) => handleTimeLimitChange(e.target.value)}
-                className="w-full h-3 bg-purple-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
-                aria-label="Time limit in minutes"
-              />
-              <div className="flex justify-between text-sm text-gray-600 mt-1">
-                <span>1 min</span>
-                <span>30 min</span>
+              <div className="slider-container relative pt-4 pb-2">
+                {showTimeBubble && (
+                  <div
+                    className="slider-value-bubble purple-bubble"
+                    style={{
+                      left: `${((Math.floor(settings.timeLimit / 60) - 1) / (30 - 1)) * 100}%`,
+                    }}
+                  >
+                    {Math.floor(settings.timeLimit / 60)} min
+                  </div>
+                )}
+                <input
+                  id="timeLimit"
+                  type="range"
+                  min="1"
+                  max="30"
+                  step="1"
+                  value={Math.floor(settings.timeLimit / 60)}
+                  onChange={(e) => handleTimeLimitChange(e.target.value)}
+                  onMouseDown={() => setShowTimeBubble(true)}
+                  onMouseUp={() => setShowTimeBubble(false)}
+                  onTouchStart={() => setShowTimeBubble(true)}
+                  onTouchEnd={() => setShowTimeBubble(false)}
+                  className="child-friendly-slider purple-variant"
+                  aria-label="Time limit in minutes"
+                  aria-valuemin={1}
+                  aria-valuemax={30}
+                  aria-valuenow={Math.floor(settings.timeLimit / 60)}
+                />
+              </div>
+              <div className="flex justify-between text-base text-gray-600 mt-2 font-semibold">
+                <span>1 minute</span>
+                <span>30 minutes</span>
               </div>
             </div>
           </div>

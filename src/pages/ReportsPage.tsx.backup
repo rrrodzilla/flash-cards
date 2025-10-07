@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Target, Award, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Trophy, Zap, Clock, Flame } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { getUser, getSessions } from '../storage';
 import type { Session } from '../types';
@@ -13,7 +13,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { SkipLink } from '../components';
+import { StatCard, AchievementBadge, SkipLink } from '../components';
 
 export default function ReportsPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -174,7 +174,7 @@ export default function ReportsPage() {
         </div>
       </header>
 
-      <main id="main-content" tabIndex={-1} className="p-4 max-w-6xl mx-auto">
+      <main className="p-4 max-w-6xl mx-auto">
         {sessions.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📊</div>
@@ -323,9 +323,7 @@ export default function ReportsPage() {
 
             <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Session History</h2>
-
-              {/* Desktop table view - hidden on mobile */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-gray-200">
@@ -393,79 +391,6 @@ export default function ReportsPage() {
                     })}
                   </tbody>
                 </table>
-              </div>
-
-              {/* Mobile card view - shown only on mobile */}
-              <div className="md:hidden space-y-3">
-                {sessions.map((session) => {
-                  const percentage =
-                    session.totalCards > 0
-                      ? Math.round((session.score / session.totalCards) * 100)
-                      : 0;
-
-                  return (
-                    <div
-                      key={session.sessionId}
-                      className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-500 font-semibold">
-                            {formatDate(session.timestamp)}
-                          </p>
-                          <div className="flex items-baseline gap-2 mt-1">
-                            <span
-                              className={`text-3xl font-black ${
-                                percentage >= 90
-                                  ? 'text-green-600'
-                                  : percentage >= 75
-                                  ? 'text-blue-600'
-                                  : percentage >= 60
-                                  ? 'text-yellow-600'
-                                  : 'text-red-600'
-                              }`}
-                            >
-                              {percentage}%
-                            </span>
-                            <span className="text-lg text-gray-500 font-semibold">
-                              ({session.score}/{session.totalCards})
-                            </span>
-                          </div>
-                        </div>
-                        {session.timedOut ? (
-                          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">
-                            Timeout
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
-                            Done!
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">🎯</span>
-                          <div>
-                            <p className="text-xs text-gray-500 font-medium">Cards</p>
-                            <p className="text-base font-bold text-gray-900">
-                              {session.totalCards}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">⏱️</span>
-                          <div>
-                            <p className="text-xs text-gray-500 font-medium">Time</p>
-                            <p className="text-base font-bold text-gray-900">
-                              {session.finishTime ? formatTime(session.finishTime) : '--:--'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </div>
           </>
