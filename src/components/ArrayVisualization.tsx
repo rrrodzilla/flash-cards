@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
 export interface ArrayVisualizationProps {
@@ -51,13 +51,15 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
   const [visibleDots, setVisibleDots] = useState(0);
   const [showTotal, setShowTotal] = useState(false);
   const [showEquation, setShowEquation] = useState(false);
-  const [completedRows, setCompletedRows] = useState(0);
   const [coloredRows, setColoredRows] = useState(0);
   const [lastCompletedRow, setLastCompletedRow] = useState<number | null>(null);
   const [viewportWidth, setViewportWidth] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth : 1024
   );
   const prefersReducedMotion = useReducedMotion();
+
+  // Track which rows have had their color transition scheduled
+  const processedRowsRef = useRef<Set<number>>(new Set());
 
   const totalDots = operand1 * operand2;
   const isLargeProblem = totalDots > 100;
@@ -149,38 +151,36 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
   // Track row completion for pulse animation and color transition
   useEffect(() => {
     if (visibleDots === 0) {
-      setCompletedRows(0);
       setLastCompletedRow(null);
+      processedRowsRef.current.clear();
       return undefined;
     }
 
     // Check if a new row just completed
     if (visibleDots % operand2 === 0) {
       const newCompletedRows = visibleDots / operand2;
-      if (newCompletedRows > completedRows) {
-        setCompletedRows(newCompletedRows);
-        setLastCompletedRow(newCompletedRows - 1);
+      const rowIndex = newCompletedRows - 1;
+
+      // Only process each row once to avoid clearing timers prematurely
+      if (!processedRowsRef.current.has(rowIndex)) {
+        processedRowsRef.current.add(rowIndex);
+        setLastCompletedRow(rowIndex);
 
         // Delay color change until after pulse animation completes
         // Pulse animation is 300ms, so we delay color change by 350ms
-        const colorTimer = setTimeout(() => {
+        setTimeout(() => {
           setColoredRows(newCompletedRows);
         }, 350);
 
         // Clear the lastCompletedRow after pulse animation completes (300ms)
-        const pulseTimer = setTimeout(() => {
+        setTimeout(() => {
           setLastCompletedRow(null);
         }, 300);
-
-        return () => {
-          clearTimeout(colorTimer);
-          clearTimeout(pulseTimer);
-        };
       }
     }
 
     return undefined;
-  }, [visibleDots, operand2, completedRows]);
+  }, [visibleDots, operand2]);
 
   // Render symbolic representation for large problems
   if (isLargeProblem) {
