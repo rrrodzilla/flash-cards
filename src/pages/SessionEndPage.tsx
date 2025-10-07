@@ -78,51 +78,6 @@ export default function SessionEndPage() {
 
   const tier = getCelebrationTier();
 
-  const getMessage = () => {
-    switch (tier) {
-      case 'perfect':
-        return 'PERFECT SCORE!';
-      case 'great':
-        return 'Amazing Job!';
-      case 'good':
-        return 'Great Work!';
-      case 'encouraging':
-        return 'Keep Practicing!';
-      case 'timeout':
-        return "Time's Up!";
-    }
-  };
-
-  const getEmoji = () => {
-    switch (tier) {
-      case 'perfect':
-        return '👑';
-      case 'great':
-        return '🌟';
-      case 'good':
-        return '✨';
-      case 'encouraging':
-        return '🌱';
-      case 'timeout':
-        return '⏰';
-    }
-  };
-
-  const getDescription = () => {
-    switch (tier) {
-      case 'perfect':
-        return 'You got every single question correct! Outstanding!';
-      case 'great':
-        return 'Excellent work! You did great!';
-      case 'good':
-        return 'Nice job! Keep up the good work!';
-      case 'encouraging':
-        return "You're improving! Practice makes perfect!";
-      case 'timeout':
-        return 'You ran out of time, but great effort!';
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4 relative overflow-hidden">
       <SkipLink />
@@ -188,26 +143,6 @@ export default function SessionEndPage() {
       )}
 
       <div id="main-content" tabIndex={-1} className="max-w-2xl w-full relative z-10">
-        <div className="text-center mb-8">
-          <div className={`text-8xl mb-4 ${tier === 'perfect' ? 'animate-bounce' : tier === 'encouraging' ? 'animate-grow' : 'animate-pulse'}`}>
-            {getEmoji()}
-          </div>
-          <h1 className={`text-5xl font-black mb-2 ${
-            tier === 'perfect'
-              ? 'bg-gradient-to-r from-yellow-400 via-orange-400 to-pink-400 bg-clip-text text-transparent'
-              : tier === 'great'
-              ? 'text-blue-600'
-              : tier === 'good'
-              ? 'text-purple-600'
-              : 'text-green-600'
-          }`}>
-            {getMessage()}
-          </h1>
-          <p className="text-xl text-gray-600 font-semibold">
-            {getDescription()}
-          </p>
-        </div>
-
         <div className="mb-8">
           <ScoreDisplay
             score={score}
