@@ -8,7 +8,7 @@ import { useApp } from '../context';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { setSettings: setAppSettings } = useApp();
+  const { setSettings: setAppSettings, currentUser } = useApp();
   const [settings, setSettings] = useState<Settings>(getSettings());
   const [isClearDataModalOpen, setIsClearDataModalOpen] = useState(false);
   const [error, setError] = useState('');
@@ -81,6 +81,14 @@ export default function SettingsPage() {
     clearAllData();
     setIsClearDataModalOpen(false);
     navigate('/');
+  };
+
+  const handleResetTutorial = () => {
+    if (currentUser) {
+      localStorage.removeItem(`tutorial_seen_${currentUser.id}`);
+      setSuccess('Tutorial reset! It will show again on your next session.');
+      setTimeout(() => setSuccess(''), 3000);
+    }
   };
 
   const selectAll = () => {
@@ -271,6 +279,30 @@ export default function SettingsPage() {
                 <span>30 minutes</span>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-2 border-gray-100">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            Learning Help
+          </h2>
+
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex-1">
+              <label className="text-lg font-semibold text-gray-900">
+                Reset Tutorial
+              </label>
+              <p className="text-sm text-gray-600">
+                Replay the "Show Me How" feature introduction on your next session
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={handleResetTutorial}
+              disabled={!currentUser}
+            >
+              Reset
+            </Button>
           </div>
         </div>
 

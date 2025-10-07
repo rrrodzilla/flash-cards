@@ -31,6 +31,7 @@ export default function SessionPage() {
   const [streak, setStreak] = useState(0);
   const [milestoneReached, setMilestoneReached] = useState<number | null>(null);
   const [showVisualization, setShowVisualization] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   // Track which session we've initialized to prevent duplicates in Strict Mode
@@ -163,6 +164,16 @@ export default function SessionPage() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [feedback]);
+
+  // P1 feature: Check if user has seen tutorial (onboarding)
+  useEffect(() => {
+    if (!userId) return;
+
+    const hasSeenTutorial = localStorage.getItem(`tutorial_seen_${userId}`);
+    if (!hasSeenTutorial && currentCardIndex === 0 && cards.length > 0) {
+      setShowOnboarding(true);
+    }
+  }, [userId, currentCardIndex, cards.length]);
 
   const handleSessionComplete = useCallback((completedCards: Card[]) => {
     if (timerRef.current !== null) {
@@ -433,25 +444,41 @@ export default function SessionPage() {
             )}
 
             {feedback && (
-              <div
-                className={`mb-6 p-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-xl ${
-                  feedback === 'correct'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-red-100 text-red-700'
-                }`}
-                role="alert"
-                aria-live="assertive"
-                aria-atomic="true"
-              >
+              <div className="mb-6 space-y-4">
                 {feedback === 'correct' ? (
-                  <>
+                  <div
+                    className="p-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-xl bg-green-100 text-green-700"
+                    role="alert"
+                    aria-live="assertive"
+                    aria-atomic="true"
+                  >
                     <Check size={28} />
                     <span>Correct! {streak >= 3 && `🔥 ${streak} in a row!`}</span>
-                  </>
+                  </div>
                 ) : (
                   <>
-                    <X size={28} />
-                    <span>Incorrect! Answer: {currentCard.correctAnswer}</span>
+                    <div
+                      className="p-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-xl bg-red-100 text-red-700"
+                      role="alert"
+                      aria-live="assertive"
+                      aria-atomic="true"
+                    >
+                      <X size={28} />
+                      <span>Incorrect! Answer: {currentCard.correctAnswer}</span>
+                    </div>
+
+                    {/* Enhanced P1 feature: Show compact visualization on incorrect answer */}
+                    <div className="animate-fadeIn">
+                      <p className="text-lg font-semibold text-gray-700 mb-2 text-center">
+                        Let's see why:
+                      </p>
+                      <ArrayVisualization
+                        operand1={currentCard.operand1}
+                        operand2={currentCard.operand2}
+                        correctAnswer={currentCard.correctAnswer}
+                        variant="compact"
+                      />
+                    </div>
                   </>
                 )}
               </div>
@@ -502,6 +529,43 @@ export default function SessionPage() {
               Exit Anyway
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* P1 feature: First-time onboarding modal */}
+      <Modal
+        isOpen={showOnboarding}
+        onClose={() => {
+          localStorage.setItem(`tutorial_seen_${userId}`, 'true');
+          setShowOnboarding(false);
+        }}
+        title="💡 Helpful Tip!"
+      >
+        <div className="space-y-4">
+          <p className="text-lg text-gray-700">
+            If you're stuck on a problem, tap <strong className="text-purple-600">"Show Me How"</strong> to see a visual explanation!
+          </p>
+
+          <div className="bg-gray-50 p-4 rounded-xl">
+            <p className="text-sm text-gray-600 mb-3">Here's an example for 3 × 4:</p>
+            <ArrayVisualization
+              operand1={3}
+              operand2={4}
+              correctAnswer={12}
+              variant="compact"
+            />
+          </div>
+
+          <Button
+            onClick={() => {
+              localStorage.setItem(`tutorial_seen_${userId}`, 'true');
+              setShowOnboarding(false);
+            }}
+            variant="primary"
+            fullWidth
+          >
+            Got It! Let's Start
+          </Button>
         </div>
       </Modal>
     </div>
