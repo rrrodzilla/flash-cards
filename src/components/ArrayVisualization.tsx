@@ -52,18 +52,50 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
   const [showTotal, setShowTotal] = useState(false);
   const [showEquation, setShowEquation] = useState(false);
   const [completedRows, setCompletedRows] = useState(0);
+  const [coloredRows, setColoredRows] = useState(0);
   const [lastCompletedRow, setLastCompletedRow] = useState<number | null>(null);
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth : 1024
+  );
   const prefersReducedMotion = useReducedMotion();
 
   const totalDots = operand1 * operand2;
   const isLargeProblem = totalDots > 100;
 
-  // Calculate dot size based on problem size and variant
+  // Track viewport width for responsive dot sizing
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Calculate dot size based on problem size, variant, and viewport width
   const getDotSize = () => {
     if (variant === 'compact') return 4;
-    if (totalDots <= 20) return 10;
-    if (totalDots <= 72) return 8;
-    return 6;
+
+    // Responsive sizing based on viewport width
+    const isDesktop = viewportWidth >= 1024; // lg breakpoint
+    const isTablet = viewportWidth >= 768; // md breakpoint
+
+    if (isDesktop) {
+      // Larger dots on desktop
+      if (totalDots <= 20) return 16;
+      if (totalDots <= 72) return 12;
+      return 10;
+    } else if (isTablet) {
+      // Medium dots on tablet
+      if (totalDots <= 20) return 12;
+      if (totalDots <= 72) return 10;
+      return 8;
+    } else {
+      // Original mobile sizing
+      if (totalDots <= 20) return 10;
+      if (totalDots <= 72) return 8;
+      return 6;
+    }
   };
 
   const dotSize = getDotSize();
@@ -75,12 +107,14 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
     setVisibleDots(0);
     setShowTotal(false);
     setShowEquation(false);
+    setColoredRows(0);
 
     if (prefersReducedMotion) {
       // Show everything immediately if reduced motion is preferred
       setVisibleDots(totalDots);
       setShowTotal(true);
       setShowEquation(true);
+      setColoredRows(operand1);
       onComplete?.();
       return;
     }
@@ -112,7 +146,7 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
     };
   }, [totalDots, prefersReducedMotion, variant, onComplete, operand1, operand2]);
 
-  // Track row completion for pulse animation
+  // Track row completion for pulse animation and color transition
   useEffect(() => {
     if (visibleDots === 0) {
       setCompletedRows(0);
@@ -127,12 +161,21 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
         setCompletedRows(newCompletedRows);
         setLastCompletedRow(newCompletedRows - 1);
 
-        // Clear the lastCompletedRow after animation completes (300ms)
-        const timer = setTimeout(() => {
+        // Delay color change until after pulse animation completes
+        // Pulse animation is 300ms, so we delay color change by 350ms
+        const colorTimer = setTimeout(() => {
+          setColoredRows(newCompletedRows);
+        }, 350);
+
+        // Clear the lastCompletedRow after pulse animation completes (300ms)
+        const pulseTimer = setTimeout(() => {
           setLastCompletedRow(null);
         }, 300);
 
-        return () => clearTimeout(timer);
+        return () => {
+          clearTimeout(colorTimer);
+          clearTimeout(pulseTimer);
+        };
       }
     }
 
@@ -234,14 +277,14 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
               const dotIndex = rowIndex * operand2 + colIndex;
               const isVisible = dotIndex < visibleDots;
               const isLastDotInRow = colIndex === operand2 - 1;
-              const isRowCompleted = rowIndex < completedRows;
+              const isRowColored = rowIndex < coloredRows;
               const shouldPulse = !prefersReducedMotion && lastCompletedRow === rowIndex && isLastDotInRow;
 
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
                   className={`rounded-full transition-all duration-200 ${
-                    isRowCompleted ? 'bg-blue-600' : 'bg-blue-500'
+                    isRowColored ? 'bg-blue-600' : 'bg-blue-500'
                   } ${
                     isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
                   } ${
