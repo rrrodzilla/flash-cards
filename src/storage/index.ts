@@ -811,3 +811,260 @@ export async function getRemainingStorageSpaceAsync(): Promise<number> {
   const used = getStorageSize();
   return TYPICAL_LIMIT - used;
 }
+
+// ============================================================================
+// MULTI-TAB SYNCHRONIZATION
+// ============================================================================
+
+/**
+ * Storage change event handler type
+ */
+export type StorageChangeHandler = (key: string, newValue: unknown) => void;
+
+const storageListeners = new Set<StorageChangeHandler>();
+
+/**
+ * Listens for storage changes from other tabs/windows
+ * Returns cleanup function to remove listener
+ */
+export function onStorageChange(handler: StorageChangeHandler): () => void {
+  storageListeners.add(handler);
+
+  const listener = (event: StorageEvent): void => {
+    if (!event.key || !Object.values(StorageKeys).includes(event.key as StorageKeys)) {
+      return;
+    }
+
+    try {
+      const newValue: unknown = event.newValue ? JSON.parse(event.newValue) : null;
+      handler(event.key, newValue);
+    } catch (error) {
+      console.error('[Storage] Failed to parse storage change event:', error);
+    }
+  };
+
+  window.addEventListener('storage', listener);
+
+  return () => {
+    storageListeners.delete(handler);
+    window.removeEventListener('storage', listener);
+  };
+}
+
+/**
+ * Broadcasts a storage change to all registered listeners
+ * Used for same-tab updates to maintain consistency
+ */
+function broadcastChange(key: string, value: unknown): void {
+  storageListeners.forEach((handler) => {
+    try {
+      handler(key, value);
+    } catch (error) {
+      console.error('[Storage] Error in storage change handler:', error);
+    }
+  });
+}
+
+/**
+ * Enhanced store function with multi-tab sync support
+ */
+function safeStoreWithSync(key: string, value: unknown): void {
+  safeStore(key, value);
+  broadcastChange(key, value);
+}
+
+// Re-export enhanced storage for future use
+export { safeStoreWithSync };
+
+// ============================================================================
+// TRANSACTION-LIKE ATOMIC OPERATIONS
+// ============================================================================
+
+/**
+ * Atomic transaction operation
+ * Ensures all operations succeed or all fail together
+ */
+export function atomicTransaction<T>(
+  operation: () => T,
+  rollbackData?: Map<string, string | null>
+): T {
+  const backup = new Map<string, string | null>();
+
+  try {
+    // Backup current state if rollback data not provided
+    if (!rollbackData) {
+      Object.values(StorageKeys).forEach((key) => {
+        backup.set(key, localStorage.getItem(key));
+      });
+    }
+
+    // Execute operation
+    const result = operation();
+
+    return result;
+  } catch (error) {
+    // Rollback on error
+    const dataToRestore = rollbackData || backup;
+
+    dataToRestore.forEach((value, key) => {
+      if (value === null) {
+        localStorage.removeItem(key);
+      } else {
+        localStorage.setItem(key, value);
+      }
+    });
+
+    throw error;
+  }
+}
+
+/**
+ * Atomically update multiple users
+ * All updates succeed or all fail
+ */
+export function atomicUpdateUsers(
+  updates: Array<{ id: string; updates: Partial<Pick<User, 'name'>> }>
+): User[] {
+  return atomicTransaction(() => {
+    const results: User[] = [];
+
+    for (const { id, updates: userUpdates } of updates) {
+      const updated = updateUser(id, userUpdates);
+      if (!updated) {
+        throw new StorageError(`Failed to update user with ID: ${id}`);
+      }
+      results.push(updated);
+    }
+
+    return results;
+  });
+}
+
+/**
+ * Atomically create user and initial session
+ */
+export function atomicCreateUserWithSession(
+  name: string,
+  settings: Settings
+): { user: User; session: Session } {
+  return atomicTransaction(() => {
+    const user = createUser(name);
+    const session = createSession(user.id, settings);
+    return { user, session };
+  });
+}
+
+/**
+ * Atomically delete user and all sessions
+ * More efficient than separate operations
+ */
+export function atomicDeleteUserAndSessions(userId: string): boolean {
+  return atomicTransaction(() => {
+    const deleted = deleteUser(userId);
+    if (!deleted) {
+      return false;
+    }
+    return true;
+  });
+}
+
+// ============================================================================
+// SCHEMA MIGRATION SUPPORT
+// ============================================================================
+
+const CURRENT_SCHEMA_VERSION = 1;
+const SCHEMA_VERSION_KEY = 'flash-cards-schema-version';
+
+/**
+ * Gets the current schema version from storage
+ */
+export function getSchemaVersion(): number {
+  const version = localStorage.getItem(SCHEMA_VERSION_KEY);
+  return version ? parseInt(version, 10) : 0;
+}
+
+/**
+ * Sets the schema version in storage
+ */
+function setSchemaVersion(version: number): void {
+  localStorage.setItem(SCHEMA_VERSION_KEY, version.toString());
+}
+
+/**
+ * Migration function type
+ */
+type MigrationFunction = () => void;
+
+/**
+ * Schema migrations registry
+ * Add new migrations as schema evolves
+ */
+const migrations: Record<number, MigrationFunction> = {
+  1: () => {
+    // Migration to version 1 (initial schema)
+    // Ensure all keys exist with defaults
+    if (!localStorage.getItem(StorageKeys.USERS)) {
+      safeStore(StorageKeys.USERS, []);
+    }
+    if (!localStorage.getItem(StorageKeys.SETTINGS)) {
+      safeStore(StorageKeys.SETTINGS, DEFAULT_SETTINGS);
+    }
+    if (!localStorage.getItem(StorageKeys.SESSIONS)) {
+      safeStore(StorageKeys.SESSIONS, []);
+    }
+  },
+};
+
+/**
+ * Runs all pending migrations
+ * Safe to call on every app startup
+ */
+export function runMigrations(): void {
+  const currentVersion = getSchemaVersion();
+
+  if (currentVersion === CURRENT_SCHEMA_VERSION) {
+    return; // Already up to date
+  }
+
+  try {
+    // Run migrations in order
+    for (let version = currentVersion + 1; version <= CURRENT_SCHEMA_VERSION; version++) {
+      const migration = migrations[version];
+      if (migration) {
+        console.log(`[Storage] Running migration to version ${version}`);
+        migration();
+        setSchemaVersion(version);
+      }
+    }
+
+    console.log(`[Storage] Migrations complete. Current version: ${CURRENT_SCHEMA_VERSION}`);
+  } catch (error) {
+    console.error('[Storage] Migration failed:', error);
+    throw new StorageError('Failed to migrate storage schema', error);
+  }
+}
+
+/**
+ * Validates the current schema and runs migrations if needed
+ * Should be called on app initialization
+ */
+export function initializeStorage(): void {
+  if (!isStorageAvailable()) {
+    throw new StorageError('localStorage is not available');
+  }
+
+  runMigrations();
+}
+
+// ============================================================================
+// ENHANCED CRUD WITH SYNC
+// ============================================================================
+
+/**
+ * Enhanced storage operations that include multi-tab synchronization
+ * Export for use in advanced scenarios
+ */
+export function safeStoreEnhanced(key: string, value: unknown): void {
+  safeStore(key, value);
+  broadcastChange(key, value);
+}
