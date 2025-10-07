@@ -1,9 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { X, Check, AlertTriangle, Star } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getUser, getSettings, createSession, updateSession } from '../storage';
+import { getUser, getSettings, createSession, updateSession, getCurrentSession } from '../storage';
 import { generateSessionProblems } from '../algorithms/weightedRandom';
 import type { Card } from '../types';
+import { StorageKeys } from '../types';
 import { NumberPad, Timer, Modal, Button, ConfettiOverlay, SkipLink, SessionPageSkeleton } from '../components';
 import { StarBurst } from '../components/StarBurst';
 
@@ -31,7 +32,8 @@ export default function SessionPage() {
   const [milestoneReached, setMilestoneReached] = useState<number | null>(null);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
-  const sessionInitializedRef = useRef<boolean>(false);
+  // Track which session we've initialized to prevent duplicates in Strict Mode
+  const initializedSessionIdRef = useRef<string | null>(null);
 
   const handleTimeout = useCallback(() => {
     if (timerRef.current !== null) {
@@ -53,6 +55,9 @@ export default function SessionPage() {
       totalCards,
       timedOut: true,
     });
+
+    // Clear current session marker
+    localStorage.removeItem(StorageKeys.CURRENT_SESSION);
 
     navigate('/session-end', {
       state: {
@@ -78,25 +83,43 @@ export default function SessionPage() {
 
     setUser(loadedUser);
 
-    // Prevent double session creation in React Strict Mode
-    if (sessionInitializedRef.current) {
+    // Check if there's already a current session in progress
+    // This prevents duplicate session creation in React Strict Mode
+    const existingSession = getCurrentSession(userId);
+
+    if (existingSession && initializedSessionIdRef.current === existingSession.sessionId) {
+      // We've already initialized this session, skip
       return;
     }
-    sessionInitializedRef.current = true;
 
-    const settings = getSettings();
-    const generatedProblems = generateSessionProblems(settings, userId);
-    setCards(generatedProblems);
+    if (existingSession) {
+      // Resume existing session
+      const settings = getSettings();
+      const generatedProblems = generateSessionProblems(settings, userId);
+      setCards(generatedProblems);
+      initializedSessionIdRef.current = existingSession.sessionId;
+      setSessionId(existingSession.sessionId);
+      setTotalTime(settings.timeLimit);
+      setTimeRemaining(settings.timeLimit);
+      startTimeRef.current = Date.now();
+    } else {
+      // Create new session
+      const settings = getSettings();
+      const generatedProblems = generateSessionProblems(settings, userId);
+      setCards(generatedProblems);
 
-    const session = createSession(userId, settings);
-    setSessionId(session.sessionId);
-    setTotalTime(settings.timeLimit);
-    setTimeRemaining(settings.timeLimit);
-    startTimeRef.current = Date.now();
+      const session = createSession(userId, settings);
+      localStorage.setItem(StorageKeys.CURRENT_SESSION, session.sessionId);
+
+      initializedSessionIdRef.current = session.sessionId;
+      setSessionId(session.sessionId);
+      setTotalTime(settings.timeLimit);
+      setTimeRemaining(settings.timeLimit);
+      startTimeRef.current = Date.now();
+    }
 
     return () => {
-      // Reset initialization flag on cleanup to allow re-initialization
-      sessionInitializedRef.current = false;
+      // Clean up timer
       if (timerRef.current !== null) {
         clearInterval(timerRef.current);
       }
@@ -144,6 +167,9 @@ export default function SessionPage() {
       finishTime: elapsedTime,
       timedOut: false,
     });
+
+    // Clear current session marker
+    localStorage.removeItem(StorageKeys.CURRENT_SESSION);
 
     navigate('/session-end', {
       state: {
@@ -238,6 +264,9 @@ export default function SessionPage() {
       totalCards: cards.length,
       timedOut: true,
     });
+
+    // Clear current session marker
+    localStorage.removeItem(StorageKeys.CURRENT_SESSION);
 
     navigate('/users');
   };
