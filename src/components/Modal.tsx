@@ -1,15 +1,45 @@
 import React, { useEffect, useRef } from 'react';
 
+/**
+ * Modal component props interface
+ */
 export interface ModalProps {
+  /** Controls modal visibility */
   isOpen: boolean;
+  /** Callback when modal should close */
   onClose: () => void;
+  /** Optional title displayed at top of modal */
   title?: string;
+  /** Modal content */
   children: React.ReactNode;
+  /** Show close button in top right corner */
   showCloseButton?: boolean;
+  /** Allow closing modal by clicking backdrop */
   closeOnBackdropClick?: boolean;
+  /** Allow closing modal by pressing Escape key */
   closeOnEscape?: boolean;
 }
 
+/**
+ * Modal Component
+ *
+ * An accessible modal dialog with focus management and keyboard navigation.
+ * Implements ARIA best practices and traps focus within the modal.
+ * Designed for mobile-first usage with kid-friendly animations.
+ *
+ * @example
+ * ```tsx
+ * const [isOpen, setIsOpen] = useState(false);
+ *
+ * <Modal
+ *   isOpen={isOpen}
+ *   onClose={() => setIsOpen(false)}
+ *   title="Settings"
+ * >
+ *   <p>Configure your flash cards here</p>
+ * </Modal>
+ * ```
+ */
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,
@@ -109,7 +139,7 @@ export const Modal: React.FC<ModalProps> = ({
         {showCloseButton && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-4 focus:ring-blue-300 active:scale-95"
+            className="absolute top-4 right-4 z-10 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-4 focus:ring-blue-300 active:scale-95 touch-manipulation"
             aria-label="Close modal"
           >
             <svg

@@ -1,13 +1,38 @@
 import React from 'react';
 
+/**
+ * Button component props interface
+ */
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  /** Visual style variant of the button */
   variant?: 'primary' | 'secondary' | 'danger';
+  /** Size of the button, affects minimum height and padding */
   size?: 'small' | 'medium' | 'large';
+  /** Shows loading spinner and disables button when true */
   loading?: boolean;
+  /** Makes button take full width of container */
   fullWidth?: boolean;
+  /** Button content */
   children: React.ReactNode;
 }
 
+/**
+ * Button Component
+ *
+ * A mobile-first, kid-friendly button with haptic-style feedback and accessibility features.
+ * Designed for children ages 8-12 with large touch targets (minimum 44px) and visual feedback.
+ *
+ * @example
+ * ```tsx
+ * <Button variant="primary" size="medium" onClick={handleClick}>
+ *   Click Me!
+ * </Button>
+ *
+ * <Button variant="danger" loading={isLoading}>
+ *   Delete
+ * </Button>
+ * ```
+ */
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'medium',
@@ -18,7 +43,7 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'font-bold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-offset-2';
+  const baseStyles = 'font-bold rounded-xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-offset-2 touch-manipulation';
 
   const variantStyles = {
     primary: 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl focus:ring-blue-300',

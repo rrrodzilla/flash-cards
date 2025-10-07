@@ -1,12 +1,41 @@
 import React from 'react';
 
+/**
+ * LoadingSpinner component props interface
+ */
 export interface LoadingSpinnerProps {
+  /** Size of the spinner */
   size?: 'small' | 'medium' | 'large';
+  /** Color variant of the spinner */
   color?: 'primary' | 'secondary' | 'white';
+  /** Optional loading message to display */
   message?: string;
+  /** Display as full-screen overlay */
   fullScreen?: boolean;
 }
 
+/**
+ * LoadingSpinner Component
+ *
+ * A colorful, animated loading spinner with optional message.
+ * Features a spinning circle with a pulsing center dot for visual appeal.
+ * Can be used inline or as a full-screen overlay.
+ *
+ * @example
+ * ```tsx
+ * <LoadingSpinner
+ *   size="large"
+ *   color="primary"
+ *   message="Loading flash cards..."
+ * />
+ *
+ * <LoadingSpinner
+ *   fullScreen
+ *   size="large"
+ *   message="Saving your progress..."
+ * />
+ * ```
+ */
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'medium',
   color = 'primary',
@@ -40,7 +69,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
           fill="none"
           viewBox="0 0 24 24"
           role="status"
-          aria-label="Loading"
+          aria-label={message || 'Loading'}
         >
           <circle
             className="opacity-25"

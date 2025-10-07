@@ -1,13 +1,40 @@
 import React, { useEffect, useCallback } from 'react';
 
+/**
+ * NumberPad component props interface
+ */
 export interface NumberPadProps {
+  /** Current value displayed */
   value: string;
+  /** Callback when value changes */
   onChange: (value: string) => void;
+  /** Optional callback when submit button is pressed */
   onSubmit?: () => void;
+  /** Maximum number of digits allowed */
   maxLength?: number;
+  /** Disable all interactions */
   disabled?: boolean;
 }
 
+/**
+ * NumberPad Component
+ *
+ * A kid-friendly numeric keypad for entering answers to math problems.
+ * Features large touch targets (64px+), keyboard support, and visual feedback.
+ * Supports keyboard input (0-9, Backspace, Enter, Escape) for accessibility.
+ *
+ * @example
+ * ```tsx
+ * const [answer, setAnswer] = useState('0');
+ *
+ * <NumberPad
+ *   value={answer}
+ *   onChange={setAnswer}
+ *   onSubmit={() => checkAnswer(answer)}
+ *   maxLength={3}
+ * />
+ * ```
+ */
 export const NumberPad: React.FC<NumberPadProps> = ({
   value,
   onChange,
@@ -89,7 +116,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
             key={num}
             onClick={() => handleNumberClick(num)}
             disabled={disabled}
-            className="min-h-[64px] bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2"
+            className="min-h-[64px] bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2 touch-manipulation"
             aria-label={`Number ${num}`}
           >
             {num}
@@ -101,7 +128,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
         <button
           onClick={handleClear}
           disabled={disabled}
-          className="min-h-[64px] bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white text-xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-offset-2"
+          className="min-h-[64px] bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white text-xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-offset-2 touch-manipulation"
           aria-label="Clear"
         >
           Clear
@@ -110,7 +137,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
         <button
           onClick={() => handleNumberClick(0)}
           disabled={disabled}
-          className="min-h-[64px] bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2"
+          className="min-h-[64px] bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2 touch-manipulation"
           aria-label="Number 0"
         >
           0
@@ -119,7 +146,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
         <button
           onClick={handleBackspace}
           disabled={disabled}
-          className="min-h-[64px] bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-orange-300 focus:ring-offset-2 flex items-center justify-center"
+          className="min-h-[64px] bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-orange-300 focus:ring-offset-2 touch-manipulation flex items-center justify-center"
           aria-label="Backspace"
         >
           <svg
@@ -143,7 +170,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
         <button
           onClick={handleSubmit}
           disabled={disabled || value === '0' || value === ''}
-          className="w-full mt-3 min-h-[64px] bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-2xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2"
+          className="w-full mt-3 min-h-[64px] bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-2xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2 touch-manipulation"
           aria-label="Submit answer"
         >
           Submit Answer
