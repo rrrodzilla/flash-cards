@@ -1,11 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { X, Check, AlertTriangle, Star } from 'lucide-react';
+import { X, Check, AlertTriangle, Star, Eye } from 'lucide-react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getUser, getSettings, createSession, updateSession, getCurrentSession } from '../storage';
 import { generateSessionProblems } from '../algorithms/weightedRandom';
 import type { Card } from '../types';
 import { StorageKeys } from '../types';
-import { NumberPad, Timer, Modal, Button, ConfettiOverlay, SkipLink, SessionPageSkeleton } from '../components';
+import { NumberPad, Timer, Modal, Button, ConfettiOverlay, SkipLink, SessionPageSkeleton, ArrayVisualization } from '../components';
 import { StarBurst } from '../components/StarBurst';
 
 interface SessionCard extends Omit<Card, 'userAnswer' | 'isCorrect'> {
@@ -30,6 +30,7 @@ export default function SessionPage() {
   const [showStreakConfetti, setShowStreakConfetti] = useState(false);
   const [streak, setStreak] = useState(0);
   const [milestoneReached, setMilestoneReached] = useState<number | null>(null);
+  const [showVisualization, setShowVisualization] = useState(false);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   // Track which session we've initialized to prevent duplicates in Strict Mode
@@ -151,6 +152,18 @@ export default function SessionPage() {
     };
   }, [sessionId, handleTimeout]);
 
+  // Keyboard shortcut for "Show Me How" (H key)
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.key === 'h' || e.key === 'H') && feedback === null) {
+        setShowVisualization((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [feedback]);
+
   const handleSessionComplete = useCallback((completedCards: Card[]) => {
     if (timerRef.current !== null) {
       clearInterval(timerRef.current);
@@ -195,6 +208,7 @@ export default function SessionPage() {
       ...currentCard,
       userAnswer,
       isCorrect,
+      visualizationShown: showVisualization,
     };
 
     const updatedCards = [...cards];
@@ -234,6 +248,7 @@ export default function SessionPage() {
     setTimeout(() => {
       setFeedback(null);
       setAnswer('0');
+      setShowVisualization(false);
 
       if (currentCardIndex + 1 >= cards.length) {
         handleSessionComplete(updatedCards as Card[]);
@@ -241,7 +256,7 @@ export default function SessionPage() {
         setCurrentCardIndex((prev) => prev + 1);
       }
     }, feedbackDelay);
-  }, [answer, currentCardIndex, cards, feedback, handleSessionComplete]);
+  }, [answer, currentCardIndex, cards, feedback, handleSessionComplete, showVisualization]);
 
   const handleExit = () => {
     setShowExitModal(true);
@@ -390,6 +405,32 @@ export default function SessionPage() {
               </div>
               <p className="text-gray-600 text-xl font-semibold">?</p>
             </div>
+
+            {/* Show Me How Button */}
+            <div className="mb-6 flex justify-center">
+              <button
+                onClick={() => setShowVisualization((prev) => !prev)}
+                disabled={feedback !== null}
+                className="px-6 py-3 bg-gradient-to-r from-purple-400 to-purple-500 hover:from-purple-500 hover:to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus:ring-4 focus:ring-purple-300 disabled:opacity-50 disabled:cursor-not-allowed min-h-[56px]"
+                aria-label="Show visual explanation of how to solve this problem"
+                aria-expanded={showVisualization}
+              >
+                <Eye size={20} />
+                {showVisualization ? 'Hide Explanation' : 'Show Me How'}
+              </button>
+            </div>
+
+            {/* Visualization Display */}
+            {showVisualization && (
+              <div className="mb-6 animate-fadeIn">
+                <ArrayVisualization
+                  operand1={currentCard.operand1}
+                  operand2={currentCard.operand2}
+                  correctAnswer={currentCard.correctAnswer}
+                  variant="full"
+                />
+              </div>
+            )}
 
             {feedback && (
               <div

@@ -29,3 +29,4 @@ export {
   ReportsPageSkeleton,
   UserCardSkeleton,
 } from './Skeleton';
+export { ArrayVisualization, type ArrayVisualizationProps } from './ArrayVisualization';

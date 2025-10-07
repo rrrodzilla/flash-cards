@@ -21,6 +21,7 @@ export interface Card {
   userAnswer: number;
   correctAnswer: number;
   isCorrect: boolean;
+  visualizationShown?: boolean;
 }
 
 export interface Session {

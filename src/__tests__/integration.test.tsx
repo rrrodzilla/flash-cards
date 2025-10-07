@@ -610,4 +610,209 @@ describe('Integration Tests', () => {
       expect(sessions[0]?.score).toBe(score);
     });
   });
+
+  describe('Array Visualization Integration', () => {
+    it('should track visualizationShown in card when used', () => {
+      const user = createUser('Visualization Test User');
+      const settings = getSettings();
+      const session = createSession(user.id, settings);
+      const problems = generateSessionProblems(settings, user.id);
+
+      // Simulate user viewing visualization for first card
+      const problem0 = problems[0];
+      if (!problem0) throw new Error('Problem 0 not found');
+      const card1: Card = {
+        ...problem0,
+        userAnswer: problem0.correctAnswer,
+        isCorrect: true,
+        visualizationShown: true,
+      };
+
+      // Simulate not viewing visualization for second card
+      const problem1 = problems[1];
+      if (!problem1) throw new Error('Problem 1 not found');
+      const card2: Card = {
+        ...problem1,
+        userAnswer: problem1.correctAnswer,
+        isCorrect: true,
+        visualizationShown: false,
+      };
+
+      // Simulate not setting visualizationShown for third card (undefined)
+      const problem2 = problems[2];
+      if (!problem2) throw new Error('Problem 2 not found');
+      const card3: Card = {
+        ...problem2,
+        userAnswer: problem2.correctAnswer,
+        isCorrect: true,
+      };
+
+      const completedCards = [card1, card2, card3];
+
+      updateSession(session.sessionId, {
+        cards: completedCards,
+        score: 3,
+        totalCards: completedCards.length,
+        timedOut: false,
+      });
+
+      const sessions = getSessions(user.id);
+      expect(sessions[0]?.cards[0]?.visualizationShown).toBe(true);
+      expect(sessions[0]?.cards[1]?.visualizationShown).toBe(false);
+      expect(sessions[0]?.cards[2]?.visualizationShown).toBeUndefined();
+    });
+
+    it('should persist visualizationShown across storage operations', () => {
+      const user = createUser('Persistence Test User');
+      const settings = getSettings();
+      const session = createSession(user.id, settings);
+      const problems = generateSessionProblems(settings, user.id);
+
+      const cardsWithVisualization: Card[] = problems.map((p, i) => ({
+        ...p,
+        userAnswer: p.correctAnswer,
+        isCorrect: true,
+        visualizationShown: i % 2 === 0, // Every other card used visualization
+      }));
+
+      updateSession(session.sessionId, {
+        cards: cardsWithVisualization,
+        score: cardsWithVisualization.length,
+        totalCards: cardsWithVisualization.length,
+        timedOut: false,
+      });
+
+      // Retrieve and verify
+      const sessions = getSessions(user.id);
+      const retrievedCards = sessions[0]?.cards || [];
+
+      retrievedCards.forEach((card, i) => {
+        if (i % 2 === 0) {
+          expect(card.visualizationShown).toBe(true);
+        } else {
+          expect(card.visualizationShown).toBe(false);
+        }
+      });
+    });
+
+    it('should handle sessions with mixed visualization usage', () => {
+      const user = createUser('Mixed Usage User');
+      const settings = getSettings();
+      const session = createSession(user.id, settings);
+      const problems = generateSessionProblems(settings, user.id);
+
+      // Simulate realistic usage: used visualization on difficult problems
+      const completedCards: Card[] = problems.map((p, i) => ({
+        ...p,
+        userAnswer: i < 3 ? p.correctAnswer + 1 : p.correctAnswer, // First 3 wrong
+        isCorrect: i >= 3,
+        visualizationShown: i < 3, // Used visualization on wrong answers
+      }));
+
+      updateSession(session.sessionId, {
+        cards: completedCards,
+        score: completedCards.filter((c) => c.isCorrect).length,
+        totalCards: completedCards.length,
+        timedOut: false,
+      });
+
+      const sessions = getSessions(user.id);
+      const cards = sessions[0]?.cards || [];
+
+      // First 3 cards should have visualization shown
+      expect(cards[0]?.visualizationShown).toBe(true);
+      expect(cards[1]?.visualizationShown).toBe(true);
+      expect(cards[2]?.visualizationShown).toBe(true);
+
+      // Remaining cards should not
+      for (let i = 3; i < cards.length; i++) {
+        expect(cards[i]?.visualizationShown).toBe(false);
+      }
+    });
+
+    it('should maintain backward compatibility with cards without visualizationShown', () => {
+      const user = createUser('Legacy User');
+      const settings = getSettings();
+      const session = createSession(user.id, settings);
+      const problems = generateSessionProblems(settings, user.id);
+
+      // Create cards without visualizationShown field (legacy format)
+      const legacyCards: Card[] = problems.map((p) => ({
+        ...p,
+        userAnswer: p.correctAnswer,
+        isCorrect: true,
+        // No visualizationShown field
+      }));
+
+      updateSession(session.sessionId, {
+        cards: legacyCards,
+        score: legacyCards.length,
+        totalCards: legacyCards.length,
+        timedOut: false,
+      });
+
+      const sessions = getSessions(user.id);
+      expect(sessions[0]?.cards).toBeDefined();
+      expect(sessions[0]?.cards.length).toBe(legacyCards.length);
+
+      // All cards should have undefined visualizationShown
+      sessions[0]?.cards.forEach((card) => {
+        expect(card.visualizationShown).toBeUndefined();
+      });
+    });
+
+    it('should track visualization usage across multiple sessions', () => {
+      const user = createUser('Multi Session User');
+      const settings = getSettings();
+
+      // Session 1: No visualization used
+      const session1 = createSession(user.id, settings);
+      const problems1 = generateSessionProblems(settings, user.id);
+      const cards1: Card[] = problems1.map((p) => ({
+        ...p,
+        userAnswer: p.correctAnswer,
+        isCorrect: true,
+        visualizationShown: false,
+      }));
+
+      updateSession(session1.sessionId, {
+        cards: cards1,
+        score: cards1.length,
+        totalCards: cards1.length,
+        timedOut: false,
+      });
+
+      // Session 2: Heavy visualization usage
+      const session2 = createSession(user.id, settings);
+      const problems2 = generateSessionProblems(settings, user.id);
+      const cards2: Card[] = problems2.map((p) => ({
+        ...p,
+        userAnswer: p.correctAnswer,
+        isCorrect: true,
+        visualizationShown: true,
+      }));
+
+      updateSession(session2.sessionId, {
+        cards: cards2,
+        score: cards2.length,
+        totalCards: cards2.length,
+        timedOut: false,
+      });
+
+      const sessions = getSessions(user.id);
+      expect(sessions).toHaveLength(2);
+
+      // Verify first session has no visualization usage
+      const session1Cards = sessions.find((s) => s.sessionId === session1.sessionId)?.cards || [];
+      session1Cards.forEach((card) => {
+        expect(card.visualizationShown).toBe(false);
+      });
+
+      // Verify second session has full visualization usage
+      const session2Cards = sessions.find((s) => s.sessionId === session2.sessionId)?.cards || [];
+      session2Cards.forEach((card) => {
+        expect(card.visualizationShown).toBe(true);
+      });
+    });
+  });
 });

@@ -16,10 +16,15 @@ const config: Config = {
           '0%': { transform: 'translateX(-100%) translateY(-100%)' },
           '100%': { transform: 'translateX(100%) translateY(100%)' },
         },
+        fadeIn: {
+          '0%': { opacity: '0', transform: 'scale(0.95)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
       },
       animation: {
         float: 'float 3s ease-in-out infinite',
         shimmer: 'shimmer 1s ease-in-out forwards',
+        fadeIn: 'fadeIn 200ms ease-out',
       },
       scale: {
         '102': '1.02',
