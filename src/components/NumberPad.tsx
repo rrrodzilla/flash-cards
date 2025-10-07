@@ -96,18 +96,44 @@ export const NumberPad: React.FC<NumberPadProps> = ({
 
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
+  const getNumberButtonClasses = (num: number) => {
+    if (num >= 1 && num <= 3) {
+      return "min-h-[64px] bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-95 active:brightness-125 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-blue-300 focus:ring-offset-2 touch-manipulation";
+    }
+    if (num >= 4 && num <= 6) {
+      return "min-h-[64px] bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-95 active:brightness-125 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2 touch-manipulation";
+    }
+    if (num >= 7 && num <= 9) {
+      return "min-h-[64px] bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-95 active:brightness-125 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-orange-300 focus:ring-offset-2 touch-manipulation";
+    }
+    return "";
+  };
+
+  const displayValue = value || '0';
+  const displayDigits = displayValue.padStart(maxLength, ' ').split('');
+
   return (
     <div className="w-full max-w-sm mx-auto" role="group" aria-label="Number pad">
       <div
-        className="mb-6 min-h-[80px] flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl border-2 border-blue-200 shadow-inner p-4"
+        className="mb-6 min-h-[100px] flex items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl border-4 border-blue-200 shadow-2xl p-4"
         role="textbox"
         aria-label="Current answer"
         aria-live="polite"
         aria-atomic="true"
       >
-        <span className="text-6xl font-bold text-blue-900 tabular-nums">
-          {value || '0'}
-        </span>
+        <div className="flex gap-2 items-center">
+          {displayDigits.map((digit, index) => (
+            <div
+              key={index}
+              className="w-20 h-24 bg-white rounded-xl border-2 border-blue-300 shadow-inner flex items-center justify-center"
+            >
+              <span className="text-7xl font-bold text-blue-900 tabular-nums">
+                {digit === ' ' ? '' : digit}
+              </span>
+            </div>
+          ))}
+          <div className="w-1 h-16 bg-blue-600 animate-pulse ml-1" />
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-3 mb-3">
@@ -116,7 +142,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
             key={num}
             onClick={() => handleNumberClick(num)}
             disabled={disabled}
-            className="min-h-[64px] bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2 touch-manipulation"
+            className={getNumberButtonClasses(num)}
             aria-label={`Number ${num}`}
           >
             {num}
@@ -128,7 +154,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
         <button
           onClick={handleClear}
           disabled={disabled}
-          className="min-h-[64px] bg-gradient-to-br from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white text-xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-offset-2 touch-manipulation"
+          className="min-h-[64px] bg-gradient-to-br from-red-400 to-red-500 hover:from-red-500 hover:to-red-600 text-white text-xl font-bold rounded-2xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-95 active:brightness-125 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-red-300 focus:ring-offset-2 touch-manipulation"
           aria-label="Clear"
         >
           Clear
@@ -137,7 +163,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
         <button
           onClick={() => handleNumberClick(0)}
           disabled={disabled}
-          className="min-h-[64px] bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2 touch-manipulation"
+          className="min-h-[64px] bg-gradient-to-br from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-3xl font-bold rounded-2xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-95 active:brightness-125 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2 touch-manipulation"
           aria-label="Number 0"
         >
           0
@@ -146,7 +172,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
         <button
           onClick={handleBackspace}
           disabled={disabled}
-          className="min-h-[64px] bg-gradient-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-orange-300 focus:ring-offset-2 touch-manipulation flex items-center justify-center"
+          className="min-h-[64px] bg-gradient-to-br from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white font-bold rounded-2xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-95 active:brightness-125 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-yellow-300 focus:ring-offset-2 touch-manipulation flex items-center justify-center"
           aria-label="Backspace"
         >
           <svg
@@ -170,7 +196,7 @@ export const NumberPad: React.FC<NumberPadProps> = ({
         <button
           onClick={handleSubmit}
           disabled={disabled || value === '0' || value === ''}
-          className="w-full mt-3 min-h-[64px] bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white text-2xl font-bold rounded-2xl shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-green-300 focus:ring-offset-2 touch-manipulation"
+          className="w-full mt-3 min-h-[64px] bg-gradient-to-r from-green-500 via-blue-500 to-purple-500 hover:from-green-600 hover:via-blue-600 hover:to-purple-600 text-white text-2xl font-bold rounded-2xl shadow-lg hover:shadow-xl hover:brightness-110 active:scale-95 active:brightness-125 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 focus:outline-none focus:ring-4 focus:ring-purple-300 focus:ring-offset-2 touch-manipulation"
           aria-label="Submit answer"
         >
           Submit Answer

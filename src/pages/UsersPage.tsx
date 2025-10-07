@@ -3,7 +3,7 @@ import { ArrowLeft, UserPlus, Trash2, BarChart3, Play } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getUsers, createUser, deleteUser, getSessions, StorageError } from '../storage';
 import type { User } from '../types';
-import { Input, Button, Modal } from '../components';
+import { Input, Button, Modal, SkipLink } from '../components';
 import { useApp } from '../context';
 
 export default function UsersPage() {
@@ -16,6 +16,7 @@ export default function UsersPage() {
   const [newUserName, setNewUserName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
 
   const loadUsers = () => {
     const loadedUsers = getUsers();
@@ -53,11 +54,12 @@ export default function UsersPage() {
 
   const confirmDelete = (user: User) => {
     setUserToDelete(user);
+    setDeleteConfirmed(false);
     setIsDeleteModalOpen(true);
   };
 
   const handleDeleteUser = () => {
-    if (!userToDelete) return;
+    if (!userToDelete || !deleteConfirmed) return;
 
     const success = deleteUser(userToDelete.id);
 
@@ -65,6 +67,7 @@ export default function UsersPage() {
       setUsers(users.filter((u) => u.id !== userToDelete.id));
       setIsDeleteModalOpen(false);
       setUserToDelete(null);
+      setDeleteConfirmed(false);
     }
   };
 
@@ -112,6 +115,7 @@ export default function UsersPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <SkipLink />
       <header className="bg-white shadow-sm border-b-2 border-blue-100">
         <div className="flex items-center gap-4 p-4">
           <button
@@ -125,7 +129,7 @@ export default function UsersPage() {
         </div>
       </header>
 
-      <main className="p-4 max-w-4xl mx-auto">
+      <main id="main-content" tabIndex={-1} className="p-4 max-w-4xl mx-auto">
         <div className="mb-6">
           <Button
             onClick={() => setIsAddModalOpen(true)}
@@ -140,12 +144,21 @@ export default function UsersPage() {
 
         {users.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">👤</div>
-            <h2 className="text-2xl font-bold text-gray-700 mb-2">No users yet</h2>
-            <p className="text-gray-500 mb-6">Create a user to start practicing!</p>
-            <Button onClick={() => setIsAddModalOpen(true)} variant="primary">
-              <UserPlus size={20} className="inline mr-2" />
-              Add Your First User
+            <div className="text-8xl mb-6 flex gap-4 justify-center items-center">
+              <span className="animate-bounce" style={{ animationDelay: '0s' }}>🎯</span>
+              <span className="animate-bounce" style={{ animationDelay: '0.1s' }}>🌟</span>
+              <span className="animate-bounce" style={{ animationDelay: '0.2s' }}>🎮</span>
+            </div>
+            <h2 className="text-3xl font-black text-gray-800 mb-3">Let's create your first player! 🌟</h2>
+            <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">Choose a name and start your math adventure!</p>
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              variant="primary"
+              size="large"
+              className="animate-bounce"
+            >
+              <UserPlus size={24} className="inline mr-2" />
+              Create First Player
             </Button>
           </div>
         ) : (
@@ -164,41 +177,88 @@ export default function UsersPage() {
                       <h3 className="text-xl font-bold text-gray-900 truncate">
                         {user.name}
                       </h3>
-                      <p className="text-sm text-gray-500">
-                        {stats.totalSessions} session{stats.totalSessions !== 1 ? 's' : ''}
-                      </p>
-                      {stats.totalSessions > 0 && (
-                        <p className="text-sm font-semibold text-blue-600">
-                          {stats.avgScore}% average score
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-lg">🏅</span>
+                        <p className="text-sm text-gray-600 font-medium">
+                          {stats.totalSessions} session{stats.totalSessions !== 1 ? 's' : ''}
                         </p>
+                      </div>
+                      {stats.totalSessions > 0 && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <div className="relative w-12 h-12">
+                            <svg className="w-12 h-12 transform -rotate-90">
+                              <circle
+                                cx="24"
+                                cy="24"
+                                r="20"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="none"
+                                className="text-gray-200"
+                              />
+                              <circle
+                                cx="24"
+                                cy="24"
+                                r="20"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                                fill="none"
+                                strokeDasharray={`${2 * Math.PI * 20}`}
+                                strokeDashoffset={`${2 * Math.PI * 20 * (1 - stats.avgScore / 100)}`}
+                                className={`${
+                                  stats.avgScore >= 80
+                                    ? 'text-green-500'
+                                    : stats.avgScore >= 60
+                                    ? 'text-blue-500'
+                                    : 'text-orange-500'
+                                } transition-all duration-500`}
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <span className="text-xs font-bold text-gray-700">
+                                {stats.avgScore}%
+                              </span>
+                            </div>
+                          </div>
+                          {stats.avgScore >= 80 && (
+                            <span className="text-xl animate-bounce">🏆</span>
+                          )}
+                          <p className="text-sm font-semibold text-blue-600">
+                            Average Score
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleSelectUser(user)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 min-h-[52px] focus:outline-none focus:ring-4 focus:ring-green-300"
-                      aria-label={`Start session for ${user.name}`}
-                    >
-                      <Play size={20} />
-                      <span>Start</span>
-                    </button>
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleSelectUser(user)}
+                        className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-br from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 min-h-[52px] focus:outline-none focus:ring-4 focus:ring-green-300"
+                        aria-label={`Start session for ${user.name}`}
+                      >
+                        <Play size={20} />
+                        <span>Start</span>
+                      </button>
 
-                    <button
-                      onClick={() => handleViewReports(user)}
-                      className="flex items-center justify-center gap-2 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 min-h-[52px] focus:outline-none focus:ring-4 focus:ring-blue-300"
-                      aria-label={`View reports for ${user.name}`}
-                    >
-                      <BarChart3 size={20} />
-                    </button>
+                      <button
+                        onClick={() => handleViewReports(user)}
+                        className="flex items-center justify-center gap-2 bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-4 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 min-h-[52px] focus:outline-none focus:ring-4 focus:ring-blue-300"
+                        aria-label={`View reports for ${user.name}`}
+                      >
+                        <BarChart3 size={20} />
+                      </button>
+                    </div>
 
                     <button
                       onClick={() => confirmDelete(user)}
-                      className="flex items-center justify-center gap-2 bg-gradient-to-br from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200 min-h-[52px] focus:outline-none focus:ring-4 focus:ring-red-300"
+                      className="w-full flex items-center justify-center gap-1 bg-gray-100 hover:bg-red-50 text-gray-500 hover:text-red-600 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-red-300"
                       aria-label={`Delete ${user.name}`}
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={16} />
+                      <span>Remove</span>
                     </button>
                   </div>
                 </div>
@@ -269,36 +329,68 @@ export default function UsersPage() {
         onClose={() => {
           setIsDeleteModalOpen(false);
           setUserToDelete(null);
+          setDeleteConfirmed(false);
         }}
         title="Delete User"
       >
         <div className="space-y-4">
-          <p className="text-gray-700">
+          <p className="text-gray-700 text-lg">
             Are you sure you want to delete <strong>{userToDelete?.name}</strong>?
           </p>
           <p className="text-sm text-red-600 font-semibold">
             This will also delete all session data for this user. This action cannot be undone.
           </p>
 
-          <div className="flex gap-3 pt-4">
-            <Button
-              onClick={() => {
-                setIsDeleteModalOpen(false);
-                setUserToDelete(null);
-              }}
-              variant="secondary"
-              fullWidth
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleDeleteUser}
-              variant="danger"
-              fullWidth
-            >
-              Delete User
-            </Button>
-          </div>
+          {!deleteConfirmed ? (
+            <div className="flex gap-3 pt-4">
+              <Button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setUserToDelete(null);
+                  setDeleteConfirmed(false);
+                }}
+                variant="secondary"
+                fullWidth
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => setDeleteConfirmed(true)}
+                variant="danger"
+                fullWidth
+              >
+                Yes, Delete
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-4 bg-red-50 border-2 border-red-300 rounded-xl">
+                <p className="text-red-800 font-bold text-center text-lg mb-2">
+                  Are you absolutely sure?
+                </p>
+                <p className="text-red-700 text-sm text-center">
+                  Click "Confirm Delete" below to permanently remove {userToDelete?.name} and all their data.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => setDeleteConfirmed(false)}
+                  variant="secondary"
+                  fullWidth
+                >
+                  Go Back
+                </Button>
+                <Button
+                  onClick={handleDeleteUser}
+                  variant="danger"
+                  fullWidth
+                >
+                  Confirm Delete
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </Modal>
     </div>
