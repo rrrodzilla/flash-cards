@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getUser, getSettings, createSession, updateSession } from '../storage';
 import { generateSessionProblems } from '../algorithms/weightedRandom';
 import type { Card } from '../types';
-import { NumberPad, Timer, Modal, Button, ConfettiOverlay, SkipLink } from '../components';
+import { NumberPad, Timer, Modal, Button, ConfettiOverlay, SkipLink, SessionPageSkeleton } from '../components';
 import { StarBurst } from '../components/StarBurst';
 
 interface SessionCard extends Omit<Card, 'userAnswer' | 'isCorrect'> {
@@ -231,14 +231,7 @@ export default function SessionPage() {
   const milestones = [25, 50, 75, 100];
 
   if (!user || !currentCard) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-        <div className="text-center">
-          <div className="text-6xl mb-4">📚</div>
-          <p className="text-xl text-gray-600">Loading session...</p>
-        </div>
-      </div>
-    );
+    return <SessionPageSkeleton />;
   }
 
   return (

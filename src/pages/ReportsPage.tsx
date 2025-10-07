@@ -13,7 +13,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { StatCard, AchievementBadge, SkipLink } from '../components';
+import { StatCard, AchievementBadge, SkipLink, ReportsPageSkeleton } from '../components';
 
 export default function ReportsPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -244,7 +244,7 @@ export default function ReportsPage() {
   };
 
   if (!user) {
-    return null;
+    return <ReportsPageSkeleton />;
   }
 
   return (

@@ -3,7 +3,7 @@ import { ArrowLeft, UserPlus, Trash2, BarChart3, Play } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { getUsers, createUser, deleteUser, getSessions, StorageError } from '../storage';
 import type { User } from '../types';
-import { Input, Button, Modal, SkipLink } from '../components';
+import { Input, Button, Modal, SkipLink, UserCardSkeleton } from '../components';
 import { useApp } from '../context';
 
 export default function UsersPage() {
@@ -17,6 +17,7 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
 
   const loadUsers = () => {
     const loadedUsers = getUsers();
@@ -25,6 +26,7 @@ export default function UsersPage() {
 
   useEffect(() => {
     loadUsers();
+    setTimeout(() => setInitialLoading(false), 300);
   }, []);
 
   const handleAddUser = () => {
@@ -142,7 +144,13 @@ export default function UsersPage() {
           </Button>
         </div>
 
-        {users.length === 0 ? (
+        {initialLoading ? (
+          <div className="grid gap-4 md:grid-cols-2">
+            {[1, 2].map((i) => (
+              <UserCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : users.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-8xl mb-6 flex gap-4 justify-center items-center">
               <span className="animate-bounce" style={{ animationDelay: '0s' }}>🎯</span>

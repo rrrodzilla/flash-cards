@@ -12,12 +12,20 @@ const config: Config = {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-10px)' },
         },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
       },
       animation: {
         float: 'float 3s ease-in-out infinite',
+        shimmer: 'shimmer 2s ease-in-out infinite',
       },
       scale: {
         '102': '1.02',
+      },
+      boxShadow: {
+        '3xl': '0 35px 60px -15px rgba(0, 0, 0, 0.3)',
       },
     },
   },

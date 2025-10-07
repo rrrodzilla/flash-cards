@@ -23,3 +23,9 @@ export { ComponentDemo } from './ComponentDemo';
 export { default as ProgressRing } from './ProgressRing';
 export { default as AchievementBadge } from './AchievementBadge';
 export { default as StatCard } from './StatCard';
+export {
+  Skeleton,
+  SessionPageSkeleton,
+  ReportsPageSkeleton,
+  UserCardSkeleton,
+} from './Skeleton';

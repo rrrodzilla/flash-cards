@@ -141,13 +141,15 @@ export default function SettingsPage() {
           <div className="flex gap-2 mb-4">
             <button
               onClick={selectAll}
-              className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold rounded-lg transition-all active:scale-95"
+              className="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold rounded-lg transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              aria-label="Select all numbers for practice"
             >
               Select All
             </button>
             <button
               onClick={selectNone}
-              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all active:scale-95"
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              aria-label="Deselect all numbers"
             >
               Select None
             </button>
