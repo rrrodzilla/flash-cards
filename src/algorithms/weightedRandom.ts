@@ -97,15 +97,15 @@ function isValidNumber(num: unknown): num is number {
 /**
  * Generate a weighted random problem based on wrong answer frequencies.
  *
- * This function creates a multiplication problem where numbers that appear more
- * frequently in wrong answers have a higher probability of being selected.
+ * This function creates a multiplication problem where:
+ * - operand1 is selected from includedNumbers (from settings)
+ * - operand2 is selected from full range 1-12, weighted by wrong answer frequencies
  *
  * Strategy:
- * - If no wrong answers exist in recent sessions -> pure random selection
- * - If wrong answers exist -> weighted selection based on frequency
- * - Each operand is selected independently (allows same number to appear twice, e.g., 7×7)
+ * - If no wrong answers exist in recent sessions -> pure random selection for operand2
+ * - If wrong answers exist -> weighted selection based on frequency for operand2
  *
- * @param includedNumbers - Array of numbers to include in problem generation (from settings)
+ * @param includedNumbers - Array of numbers to include as first operand (from settings)
  * @param wrongAnswerFrequencies - Map of number to frequency from wrong answers
  * @returns Object with operand1 and operand2 for the multiplication problem
  * @throws {Error} If includedNumbers is empty or invalid
@@ -113,14 +113,14 @@ function isValidNumber(num: unknown): num is number {
  * @example
  * ```typescript
  * const problem = generateWeightedProblem(
- *   [1, 2, 3, 4, 5],
- *   new Map([[2, 10], [3, 5], [1, 0], [4, 0], [5, 0]])
+ *   [5],
+ *   new Map([[2, 10], [3, 5], [8, 8], ...])
  * );
- * // More likely to generate problems with 2 and 3 (e.g., 2×3, 3×2, 2×2, etc.)
+ * // Generates problems like 5×2, 5×8, 5×3 with 2, 8, 3 weighted highest
  * ```
  *
- * Time complexity: O(n) where n = includedNumbers.length
- * Space complexity: O(n) for weights array
+ * Time complexity: O(n) where n = 12 (fixed size for operand2 range)
+ * Space complexity: O(1) for fixed-size arrays
  */
 export function generateWeightedProblem(
   includedNumbers: number[],
@@ -139,24 +139,29 @@ export function generateWeightedProblem(
     throw new Error('includedNumbers must contain at least one valid number (1-12)');
   }
 
-  const hasWrongAnswers = validNumbers.some(num => {
+  // Full range for second operand (1-12)
+  const fullRange = Array.from({ length: 12 }, (_, i) => i + 1);
+
+  // Check if any numbers in the full range have wrong answers
+  const hasWrongAnswers = fullRange.some(num => {
     const freq = wrongAnswerFrequencies.get(num) || 0;
     return freq > 0;
   });
 
-  if (!hasWrongAnswers) {
-    const operand1 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
-    const operand2 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
+  // Select first operand from included numbers
+  const operand1 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
 
-    if (operand1 === undefined || operand2 === undefined) {
-      throw new Error('Failed to select random operands');
-    }
-
-    return { operand1, operand2 };
+  if (operand1 === undefined) {
+    throw new Error('Failed to select random operand1');
   }
 
-  const operand1 = selectWeightedRandom(validNumbers, wrongAnswerFrequencies);
-  const operand2 = selectWeightedRandom(validNumbers, wrongAnswerFrequencies);
+  // Select second operand from full range (1-12), weighted if wrong answers exist
+  let operand2: number;
+  if (!hasWrongAnswers) {
+    operand2 = fullRange[Math.floor(Math.random() * fullRange.length)] as number;
+  } else {
+    operand2 = selectWeightedRandom(fullRange, wrongAnswerFrequencies);
+  }
 
   return { operand1, operand2 };
 }
@@ -294,7 +299,8 @@ export function generateSessionProblems(
     throw new Error('Settings must include at least one valid number (1-12)');
   }
 
-  const maxPossibleUnique = validNumbers.length * validNumbers.length;
+  // Max possible unique combinations: includedNumbers (operand1) × 12 (operand2 full range)
+  const maxPossibleUnique = validNumbers.length * 12;
   if (cardsPerSession > maxPossibleUnique) {
     console.warn(
       `[WeightedRandom] Requested ${cardsPerSession} cards but only ${maxPossibleUnique} unique combinations possible. Generating maximum possible.`
@@ -336,9 +342,12 @@ export function generateSessionProblems(
     problemSet.add(problemKey);
   }
 
+  // Fallback: generate remaining cards with pure random from full range for operand2
+  const fullRange = Array.from({ length: 12 }, (_, i) => i + 1);
+
   while (cards.length < cardsPerSession) {
     const operand1 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
-    const operand2 = validNumbers[Math.floor(Math.random() * validNumbers.length)];
+    const operand2 = fullRange[Math.floor(Math.random() * fullRange.length)];
 
     if (operand1 === undefined || operand2 === undefined) {
       break;

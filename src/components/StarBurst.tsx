@@ -64,11 +64,24 @@ export const StarBurst: React.FC<StarBurstProps> = ({
       role="presentation"
       aria-label="Star burst celebration"
     >
+      {/* Multi-layer glow effect */}
+      <div className="absolute inset-0 rounded-3xl overflow-hidden">
+        {/* Bright success glow - pulses outward */}
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-indigo-500 to-blue-600 animate-pulse" />
+
+        {/* Shimmer overlay for sparkle effect */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/40 to-transparent animate-shimmer" />
+      </div>
+
       {stars.map((i) => {
         const angle = (i / starCount) * 360;
         const distance = 120;
         const x = Math.cos((angle * Math.PI) / 180) * distance;
         const y = Math.sin((angle * Math.PI) / 180) * distance;
+
+        // Use varied emoji for visual interest
+        const starEmojis = ['🌟', '✨', '💫'];
+        const emoji = starEmojis[i % starEmojis.length];
 
         return (
           <div
@@ -77,9 +90,10 @@ export const StarBurst: React.FC<StarBurstProps> = ({
             style={{
               transform: `translate(${x}px, ${y}px)`,
               animationDelay: `${i * 0.05}s`,
+              filter: 'drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 2px 10px rgba(59,130,246,0.7))',
             }}
           >
-            ⭐
+            {emoji}
           </div>
         );
       })}

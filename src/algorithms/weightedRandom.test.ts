@@ -228,7 +228,7 @@ describe('analyzeWrongAnswers', () => {
 });
 
 describe('generateWeightedProblem', () => {
-  it('should generate problem from included numbers', () => {
+  it('should generate problem with operand1 from included numbers and operand2 from full range (1-12)', () => {
     const includedNumbers = [1, 2, 3, 4, 5];
     const frequencies = new Map<number, number>();
 
@@ -238,10 +238,12 @@ describe('generateWeightedProblem', () => {
 
     const problem = generateWeightedProblem(includedNumbers, frequencies);
 
+    // operand1 should be from included numbers
     expect(problem.operand1).toBeGreaterThanOrEqual(1);
     expect(problem.operand1).toBeLessThanOrEqual(5);
+    // operand2 should be from full range (1-12)
     expect(problem.operand2).toBeGreaterThanOrEqual(1);
-    expect(problem.operand2).toBeLessThanOrEqual(5);
+    expect(problem.operand2).toBeLessThanOrEqual(12);
   });
 
   it('should use pure random when no wrong answers exist', () => {
@@ -328,8 +330,11 @@ describe('generateWeightedProblem', () => {
 
     const problem = generateWeightedProblem(includedNumbers, frequencies);
 
+    // operand1 should only be 1 or 2 (valid numbers from includedNumbers)
     expect([1, 2]).toContain(problem.operand1);
-    expect([1, 2]).toContain(problem.operand2);
+    // operand2 should be from full range (1-12)
+    expect(problem.operand2).toBeGreaterThanOrEqual(1);
+    expect(problem.operand2).toBeLessThanOrEqual(12);
   });
 
   it('should throw error if no valid numbers in includedNumbers', () => {
@@ -351,8 +356,11 @@ describe('generateWeightedProblem', () => {
 
     const problem = generateWeightedProblem(includedNumbers, frequencies);
 
+    // operand1 should always be 7 (the only included number)
     expect(problem.operand1).toBe(7);
-    expect(problem.operand2).toBe(7);
+    // operand2 should be from full range (1-12)
+    expect(problem.operand2).toBeGreaterThanOrEqual(1);
+    expect(problem.operand2).toBeLessThanOrEqual(12);
   });
 });
 
@@ -520,7 +528,7 @@ describe('generateSessionProblems', () => {
   it('should handle when requested cards exceed possible unique combinations', () => {
     const settings: Settings = {
       includedNumbers: [1, 2],
-      cardsPerSession: 10,
+      cardsPerSession: 30,
       timeLimit: 300,
     };
 
@@ -528,7 +536,8 @@ describe('generateSessionProblems', () => {
 
     const problems = generateSessionProblems(settings, 'user-1');
 
-    expect(problems.length).toBeLessThanOrEqual(4);
+    // With 2 included numbers × 12 full range = 24 max unique combinations
+    expect(problems.length).toBeLessThanOrEqual(24);
   });
 
   it('should call getLastNSessions with userId and count of 3', () => {
@@ -563,7 +572,7 @@ describe('generateSessionProblems', () => {
     expect(keys1).not.toBe(keys2);
   });
 
-  it('should respect includedNumbers setting', () => {
+  it('should respect includedNumbers setting for operand1 and use full range for operand2', () => {
     const settings: Settings = {
       includedNumbers: [7, 8, 9],
       cardsPerSession: 5,
@@ -575,8 +584,11 @@ describe('generateSessionProblems', () => {
     const problems = generateSessionProblems(settings, 'user-1');
 
     problems.forEach((problem) => {
+      // operand1 should be from includedNumbers
       expect([7, 8, 9]).toContain(problem.operand1);
-      expect([7, 8, 9]).toContain(problem.operand2);
+      // operand2 should be from full range (1-12)
+      expect(problem.operand2).toBeGreaterThanOrEqual(1);
+      expect(problem.operand2).toBeLessThanOrEqual(12);
     });
   });
 
@@ -592,8 +604,11 @@ describe('generateSessionProblems', () => {
     const problems = generateSessionProblems(settings, 'user-1');
 
     problems.forEach((problem) => {
+      // operand1 should only be 1 or 2 (valid numbers from includedNumbers)
       expect([1, 2]).toContain(problem.operand1);
-      expect([1, 2]).toContain(problem.operand2);
+      // operand2 should be from full range (1-12)
+      expect(problem.operand2).toBeGreaterThanOrEqual(1);
+      expect(problem.operand2).toBeLessThanOrEqual(12);
     });
   });
 

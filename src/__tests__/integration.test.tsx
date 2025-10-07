@@ -201,10 +201,12 @@ describe('Integration Tests', () => {
 
       expect(problems).toHaveLength(10);
       problems.forEach((problem) => {
+        // operand1 should be from includedNumbers (1-5)
         expect(problem.operand1).toBeGreaterThanOrEqual(1);
         expect(problem.operand1).toBeLessThanOrEqual(5);
+        // operand2 should be from full range (1-12)
         expect(problem.operand2).toBeGreaterThanOrEqual(1);
-        expect(problem.operand2).toBeLessThanOrEqual(5);
+        expect(problem.operand2).toBeLessThanOrEqual(12);
         expect(problem.correctAnswer).toBe(problem.operand1 * problem.operand2);
         expect(problem.problem).toBe(`${problem.operand1}×${problem.operand2}`);
       });
@@ -536,11 +538,16 @@ describe('Integration Tests', () => {
 
       const problems = generateSessionProblems(settings, user.id);
 
-      expect(problems.length).toBeLessThanOrEqual(1); // Only 1×1 is possible
+      // With 1 included number × 12 full range = 12 max possible combinations
+      // Requesting 5, so should get 5
+      expect(problems.length).toBe(5);
       problems.forEach((p) => {
+        // operand1 should always be 1 (the only included number)
         expect(p.operand1).toBe(1);
-        expect(p.operand2).toBe(1);
-        expect(p.correctAnswer).toBe(1);
+        // operand2 should be from full range (1-12)
+        expect(p.operand2).toBeGreaterThanOrEqual(1);
+        expect(p.operand2).toBeLessThanOrEqual(12);
+        expect(p.correctAnswer).toBe(p.operand1 * p.operand2);
       });
     });
 

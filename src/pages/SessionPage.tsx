@@ -94,6 +94,22 @@ export default function SessionPage() {
     setTimeRemaining(settings.timeLimit);
     startTimeRef.current = Date.now();
 
+    return () => {
+      // Reset initialization flag on cleanup to allow re-initialization
+      sessionInitializedRef.current = false;
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [userId, navigate]);
+
+  // Separate effect for timer to ensure it always runs when sessionId is set
+  useEffect(() => {
+    // Only start timer if we have a valid session and timer is not already running
+    if (!sessionId || timerRef.current !== null) {
+      return;
+    }
+
     timerRef.current = window.setInterval(() => {
       setTimeRemaining((prev) => {
         if (prev <= 1) {
@@ -107,10 +123,10 @@ export default function SessionPage() {
     return () => {
       if (timerRef.current !== null) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, navigate]);
+  }, [sessionId, handleTimeout]);
 
   const handleSessionComplete = useCallback((completedCards: Card[]) => {
     if (timerRef.current !== null) {

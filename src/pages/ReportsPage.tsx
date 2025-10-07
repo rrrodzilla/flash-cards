@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trophy, Zap, Clock, Flame } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
-import { getUser, getSessions } from '../storage';
+import { getUser, getSessions, getSettings } from '../storage';
 import type { Session } from '../types';
 import {
   LineChart,
@@ -86,8 +86,11 @@ export default function ReportsPage() {
       }
     }
 
+    const settings = getSettings();
     const totalPracticeTime = sessions.reduce((sum, s) => {
       if (s.finishTime) return sum + s.finishTime;
+      // For timed out sessions, count the full time limit
+      if (s.timedOut) return sum + settings.timeLimit;
       return sum;
     }, 0);
 

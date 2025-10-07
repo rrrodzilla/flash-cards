@@ -13,13 +13,13 @@ const config: Config = {
           '50%': { transform: 'translateY(-10px)' },
         },
         shimmer: {
-          '0%': { backgroundPosition: '-200% 0' },
-          '100%': { backgroundPosition: '200% 0' },
+          '0%': { transform: 'translateX(-100%) translateY(-100%)' },
+          '100%': { transform: 'translateX(100%) translateY(100%)' },
         },
       },
       animation: {
         float: 'float 3s ease-in-out infinite',
-        shimmer: 'shimmer 2s ease-in-out infinite',
+        shimmer: 'shimmer 1s ease-in-out forwards',
       },
       scale: {
         '102': '1.02',
