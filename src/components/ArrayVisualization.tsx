@@ -284,7 +284,7 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
                 <div
                   key={`${rowIndex}-${colIndex}`}
                   className={`rounded-full transition-all duration-200 ${
-                    isRowColored ? 'bg-blue-600' : 'bg-blue-500'
+                    isRowColored ? 'bg-indigo-600' : 'bg-blue-500'
                   } ${
                     isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
                   } ${
