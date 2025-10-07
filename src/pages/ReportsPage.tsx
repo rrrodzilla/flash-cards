@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Target, Award, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Trophy, Zap, Clock, Flame } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { getUser, getSessions } from '../storage';
 import type { Session } from '../types';
@@ -13,7 +13,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { SkipLink } from '../components';
+import { StatCard, AchievementBadge, SkipLink } from '../components';
 
 export default function ReportsPage() {
   const { userId } = useParams<{ userId: string }>();
@@ -105,39 +105,123 @@ export default function ReportsPage() {
     };
   }, [sessions]);
 
+  const achievements = useMemo(() => {
+    const hasQuickLearner = sessions.some(
+      (s) => s.finishTime && s.finishTime <= 300 && !s.timedOut
+    );
+    const hasPerfectRound = sessions.some((s) => s.score === s.totalCards && s.totalCards > 0);
+    const hasDedicated = (() => {
+      if (sessions.length < 5) return false;
+      const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      return sessions.filter((s) => s.timestamp >= oneWeekAgo).length >= 5;
+    })();
+    const hasNumberMaster = (() => {
+      const recentSessions = sessions.slice(0, 3);
+      if (recentSessions.length === 0) return false;
+      const avgScore =
+        recentSessions.reduce((sum, s) => sum + s.score / s.totalCards, 0) / recentSessions.length;
+      return avgScore >= 0.95;
+    })();
+
+    return [
+      {
+        title: 'Quick Learner',
+        description: 'Complete in under 5 min',
+        icon: '⚡',
+        earned: hasQuickLearner,
+      },
+      {
+        title: 'Perfect Round',
+        description: '100% score achieved',
+        icon: '🏆',
+        earned: hasPerfectRound,
+      },
+      {
+        title: 'Dedicated',
+        description: '5 sessions in one week',
+        icon: '🎯',
+        earned: hasDedicated,
+      },
+      {
+        title: 'Number Master',
+        description: 'Master all numbers',
+        icon: '🌟',
+        earned: hasNumberMaster,
+      },
+    ];
+  }, [sessions]);
+
   const scoreOverTimeData = useMemo(() => {
     return sessions
       .slice()
       .reverse()
-      .map((session, index) => ({
-        session: index + 1,
-        score: session.totalCards > 0 ? Math.round((session.score / session.totalCards) * 100) : 0,
-        date: new Date(session.timestamp).toLocaleDateString(),
-      }));
+      .map((session, index) => {
+        const score = session.totalCards > 0 ? Math.round((session.score / session.totalCards) * 100) : 0;
+        const prevSession = index > 0 ? sessions[sessions.length - index] : null;
+        const prevScore = prevSession && prevSession.totalCards > 0
+          ? Math.round((prevSession.score / prevSession.totalCards) * 100)
+          : 0;
+
+        return {
+          session: index + 1,
+          score,
+          improvement: prevSession ? score - prevScore : 0,
+          date: new Date(session.timestamp).toLocaleDateString(),
+        };
+      });
   }, [sessions]);
 
-  const missedNumbersData = useMemo(() => {
-    const numberFrequencies: Record<number, number> = {};
+  const practiceNumbersData = useMemo(() => {
+    const numberFrequencies: Record<number, { total: number; correct: number }> = {};
 
     for (let i = 1; i <= 12; i++) {
-      numberFrequencies[i] = 0;
+      numberFrequencies[i] = { total: 0, correct: 0 };
     }
 
     sessions.forEach((session) => {
       session.cards.forEach((card) => {
-        if (!card.isCorrect) {
-          numberFrequencies[card.operand1] = (numberFrequencies[card.operand1] || 0) + 1;
-          numberFrequencies[card.operand2] = (numberFrequencies[card.operand2] || 0) + 1;
+        const freq1 = numberFrequencies[card.operand1];
+        const freq2 = numberFrequencies[card.operand2];
+        if (freq1) {
+          freq1.total++;
+          if (card.isCorrect) {
+            freq1.correct++;
+          }
+        }
+        if (freq2) {
+          freq2.total++;
+          if (card.isCorrect) {
+            freq2.correct++;
+          }
         }
       });
     });
 
     return Object.entries(numberFrequencies)
-      .map(([num, count]) => ({
-        number: parseInt(num),
-        mistakes: count,
-      }))
-      .sort((a, b) => b.mistakes - a.mistakes);
+      .map(([num, stats]) => {
+        const number = parseInt(num);
+        const masteryRate = stats.total > 0 ? (stats.correct / stats.total) * 100 : 0;
+        let status = 'Level Up!';
+        let color = '#F59E0B';
+
+        if (masteryRate >= 90) {
+          status = 'Mastered!';
+          color = '#10B981';
+        } else if (masteryRate >= 70) {
+          status = 'Practicing';
+          color = '#FBBF24';
+        }
+
+        return {
+          number,
+          opportunities: stats.total - stats.correct,
+          masteryRate,
+          status,
+          color,
+          icon: masteryRate >= 90 ? '⭐' : masteryRate >= 70 ? '📚' : '🎯',
+        };
+      })
+      .sort((a, b) => b.opportunities - a.opportunities);
   }, [sessions]);
 
   const formatTime = (seconds: number) => {
@@ -146,7 +230,15 @@ export default function ReportsPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatDate = (timestamp: number) => {
+  const formatRelativeDate = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+
+    if (days === 0) return 'Today';
+    if (days === 1) return 'Yesterday';
+    if (days < 7) return `${days} days ago`;
+
     const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
@@ -168,8 +260,8 @@ export default function ReportsPage() {
             <ArrowLeft size={24} />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{user.name}'s Reports</h1>
-            <p className="text-sm text-gray-600">Performance statistics and insights</p>
+            <h1 className="text-2xl font-bold text-gray-900">{user.name}'s Progress</h1>
+            <p className="text-sm text-gray-600">Celebrating your learning journey!</p>
           </div>
         </div>
       </header>
@@ -177,59 +269,76 @@ export default function ReportsPage() {
       <main id="main-content" tabIndex={-1} className="p-4 max-w-6xl mx-auto">
         {sessions.length === 0 ? (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">📊</div>
-            <h2 className="text-2xl font-bold text-gray-700 mb-2">No sessions yet</h2>
+            <div className="text-6xl mb-4">🚀</div>
+            <h2 className="text-2xl font-bold text-gray-700 mb-2">Ready to Start!</h2>
             <p className="text-gray-500 mb-6">
-              Complete some practice sessions to see your stats!
+              Begin your practice journey to see your amazing progress here!
             </p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-blue-200">
-                <div className="flex items-center gap-3 mb-2">
-                  <Calendar size={24} className="text-blue-600" />
-                  <p className="text-sm font-semibold text-gray-600">Sessions</p>
-                </div>
-                <p className="text-4xl font-black text-blue-600 tabular-nums">
-                  {stats.totalSessions}
-                </p>
-              </div>
+              <StatCard
+                icon={<Trophy size={24} />}
+                label="Your Best Score"
+                value={`${stats.bestScore}%`}
+                color="text-yellow-600"
+                bgColor="bg-white"
+                borderColor="border-yellow-200"
+                progress={stats.bestScore}
+                subtext="Keep it up!"
+              />
 
-              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-green-200">
-                <div className="flex items-center gap-3 mb-2">
-                  <Target size={24} className="text-green-600" />
-                  <p className="text-sm font-semibold text-gray-600">Avg Score</p>
-                </div>
-                <p className="text-4xl font-black text-green-600 tabular-nums">
-                  {stats.avgScore}%
-                </p>
-              </div>
+              <StatCard
+                icon={<Zap size={24} />}
+                label="Fastest Time"
+                value={stats.fastestTime > 0 ? formatTime(stats.fastestTime) : '-'}
+                color="text-purple-600"
+                bgColor="bg-white"
+                borderColor="border-purple-200"
+                subtext="Lightning fast!"
+              />
 
-              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-purple-200">
-                <div className="flex items-center gap-3 mb-2">
-                  <Award size={24} className="text-purple-600" />
-                  <p className="text-sm font-semibold text-gray-600">Best Score</p>
-                </div>
-                <p className="text-4xl font-black text-purple-600 tabular-nums">
-                  {stats.bestScore}%
-                </p>
-              </div>
+              <StatCard
+                icon={<Flame size={24} />}
+                label="Current Streak"
+                value={stats.currentStreak}
+                color="text-orange-600"
+                bgColor="bg-white"
+                borderColor="border-orange-200"
+                subtext={stats.currentStreak > 0 ? 'On fire!' : 'Start one!'}
+              />
 
-              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-orange-200">
-                <div className="flex items-center gap-3 mb-2">
-                  <TrendingUp size={24} className="text-orange-600" />
-                  <p className="text-sm font-semibold text-gray-600">Avg Time</p>
-                </div>
-                <p className="text-4xl font-black text-orange-600 tabular-nums">
-                  {formatTime(stats.avgTime)}
-                </p>
+              <StatCard
+                icon={<Clock size={24} />}
+                label="Practice Time"
+                value={formatTime(stats.totalPracticeTime)}
+                color="text-blue-600"
+                bgColor="bg-white"
+                borderColor="border-blue-200"
+                subtext="Time invested"
+              />
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100 mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Your Achievements 🏆</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {achievements.map((achievement) => (
+                  <AchievementBadge
+                    key={achievement.title}
+                    title={achievement.title}
+                    description={achievement.description}
+                    icon={achievement.icon}
+                    earned={achievement.earned}
+                    size="medium"
+                  />
+                ))}
               </div>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 mb-8">
               <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Score Trend</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Score Journey 📈</h2>
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={scoreOverTimeData}>
                     <XAxis
@@ -283,9 +392,10 @@ export default function ReportsPage() {
               </div>
 
               <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Most Missed Numbers</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">Numbers to Practice! 🎯</h2>
+                <p className="text-sm text-gray-600 mb-4">These numbers need more adventures!</p>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={missedNumbersData}>
+                  <BarChart data={practiceNumbersData}>
                     <XAxis
                       dataKey="number"
                       tick={{ fontSize: 14, fontWeight: 600 }}
@@ -296,9 +406,16 @@ export default function ReportsPage() {
                       stroke="#6B7280"
                     />
                     <Tooltip
+                      formatter={(value: number, name: string) => {
+                        if (name === 'opportunities') {
+                          return [value, 'Practice Count'];
+                        }
+                        return [value, name];
+                      }}
+                      labelFormatter={(label) => `Number ${label}`}
                       contentStyle={{
                         backgroundColor: 'white',
-                        border: '2px solid #EF4444',
+                        border: '2px solid #10B981',
                         borderRadius: '12px',
                         fontSize: '16px',
                         fontWeight: 600,
@@ -306,14 +423,14 @@ export default function ReportsPage() {
                       }}
                     />
                     <Bar
-                      dataKey="mistakes"
-                      fill="url(#redGradient)"
+                      dataKey="opportunities"
+                      fill="url(#greenGradient)"
                       radius={[12, 12, 0, 0]}
                     />
                     <defs>
-                      <linearGradient id="redGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#F87171" />
-                        <stop offset="100%" stopColor="#EF4444" />
+                      <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#34D399" />
+                        <stop offset="100%" stopColor="#10B981" />
                       </linearGradient>
                     </defs>
                   </BarChart>
@@ -322,10 +439,8 @@ export default function ReportsPage() {
             </div>
 
             <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Session History</h2>
-
-              {/* Desktop table view - hidden on mobile */}
-              <div className="hidden md:block overflow-x-auto">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Session History 📚</h2>
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b-2 border-gray-200">
@@ -333,15 +448,22 @@ export default function ReportsPage() {
                       <th className="text-left py-3 px-4 font-bold text-gray-700">Score</th>
                       <th className="text-left py-3 px-4 font-bold text-gray-700">Cards</th>
                       <th className="text-left py-3 px-4 font-bold text-gray-700">Time</th>
-                      <th className="text-left py-3 px-4 font-bold text-gray-700">Status</th>
+                      <th className="text-left py-3 px-4 font-bold text-gray-700">Progress</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sessions.map((session) => {
+                    {sessions.map((session, index) => {
                       const percentage =
                         session.totalCards > 0
                           ? Math.round((session.score / session.totalCards) * 100)
                           : 0;
+
+                      const prevSession = sessions[index + 1];
+                      const prevPercentage = prevSession && prevSession.totalCards > 0
+                        ? Math.round((prevSession.score / prevSession.totalCards) * 100)
+                        : null;
+
+                      const improvement = prevPercentage !== null ? percentage - prevPercentage : null;
 
                       return (
                         <tr
@@ -349,7 +471,7 @@ export default function ReportsPage() {
                           className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                         >
                           <td className="py-3 px-4 text-gray-900 font-semibold">
-                            {formatDate(session.timestamp)}
+                            {formatRelativeDate(session.timestamp)}
                           </td>
                           <td className="py-3 px-4">
                             <span
@@ -360,7 +482,7 @@ export default function ReportsPage() {
                                   ? 'text-blue-600'
                                   : percentage >= 60
                                   ? 'text-yellow-600'
-                                  : 'text-red-600'
+                                  : 'text-orange-600'
                               }`}
                             >
                               {session.score}/{session.totalCards}
@@ -380,12 +502,19 @@ export default function ReportsPage() {
                           <td className="py-3 px-4">
                             {session.timedOut ? (
                               <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-semibold">
-                                Incomplete
+                                Still Practicing
                               </span>
                             ) : (
-                              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                                Complete
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                                  Complete
+                                </span>
+                                {improvement !== null && improvement > 0 && (
+                                  <span className="text-green-600 font-bold text-sm flex items-center">
+                                    ↑ {improvement}%
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </td>
                         </tr>
@@ -393,79 +522,6 @@ export default function ReportsPage() {
                     })}
                   </tbody>
                 </table>
-              </div>
-
-              {/* Mobile card view - shown only on mobile */}
-              <div className="md:hidden space-y-3">
-                {sessions.map((session) => {
-                  const percentage =
-                    session.totalCards > 0
-                      ? Math.round((session.score / session.totalCards) * 100)
-                      : 0;
-
-                  return (
-                    <div
-                      key={session.sessionId}
-                      className="bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl p-4 hover:shadow-md transition-all"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <p className="text-sm text-gray-500 font-semibold">
-                            {formatDate(session.timestamp)}
-                          </p>
-                          <div className="flex items-baseline gap-2 mt-1">
-                            <span
-                              className={`text-3xl font-black ${
-                                percentage >= 90
-                                  ? 'text-green-600'
-                                  : percentage >= 75
-                                  ? 'text-blue-600'
-                                  : percentage >= 60
-                                  ? 'text-yellow-600'
-                                  : 'text-red-600'
-                              }`}
-                            >
-                              {percentage}%
-                            </span>
-                            <span className="text-lg text-gray-500 font-semibold">
-                              ({session.score}/{session.totalCards})
-                            </span>
-                          </div>
-                        </div>
-                        {session.timedOut ? (
-                          <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">
-                            Timeout
-                          </span>
-                        ) : (
-                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">
-                            Done!
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">🎯</span>
-                          <div>
-                            <p className="text-xs text-gray-500 font-medium">Cards</p>
-                            <p className="text-base font-bold text-gray-900">
-                              {session.totalCards}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl">⏱️</span>
-                          <div>
-                            <p className="text-xs text-gray-500 font-medium">Time</p>
-                            <p className="text-base font-bold text-gray-900">
-                              {session.finishTime ? formatTime(session.finishTime) : '--:--'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </div>
           </>

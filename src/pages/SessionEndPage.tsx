@@ -1,7 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { RefreshCw, BarChart3, Home, Trophy, Clock, AlertCircle, Crown, Sparkles } from 'lucide-react';
+import { RefreshCw, BarChart3, Home, Trophy, Clock, AlertCircle, Crown, Sparkles, TrendingUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ScoreDisplay, Button, ConfettiOverlay, SkipLink } from '../components';
+import { getSessions } from '../storage';
 
 interface LocationState {
   timedOut: boolean;
@@ -21,6 +22,8 @@ export default function SessionEndPage() {
   const [showFireworks, setShowFireworks] = useState(false);
   const [showSparkles, setShowSparkles] = useState(false);
 
+  const [previousSessions, setPreviousSessions] = useState<{ score: number; totalCards: number } | null>(null);
+
   useEffect(() => {
     if (!state) {
       navigate('/users');
@@ -37,6 +40,17 @@ export default function SessionEndPage() {
         setShowConfetti(true);
       } else if (percentage >= 60) {
         setShowSparkles(true);
+      }
+    }
+
+    const sessions = getSessions(state.userId);
+    if (sessions.length > 0) {
+      const lastSession = sessions[0];
+      if (lastSession) {
+        setPreviousSessions({
+          score: lastSession.score,
+          totalCards: lastSession.totalCards,
+        });
       }
     }
   }, [state, navigate]);
@@ -203,6 +217,45 @@ export default function SessionEndPage() {
             showPercentage={true}
           />
         </div>
+
+        {previousSessions && !timedOut && (
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl shadow-lg p-6 mb-8 border-2 border-green-200">
+            <div className="flex items-center justify-center gap-3">
+              <TrendingUp size={28} className="text-green-600" />
+              <div className="text-center">
+                <p className="text-sm text-gray-600 font-semibold">Progress Update</p>
+                {(() => {
+                  const currentPercentage = totalCards > 0 ? Math.round((score / totalCards) * 100) : 0;
+                  const previousPercentage = previousSessions.totalCards > 0
+                    ? Math.round((previousSessions.score / previousSessions.totalCards) * 100)
+                    : 0;
+                  const improvement = currentPercentage - previousPercentage;
+                  const correctImprovement = score - previousSessions.score;
+
+                  if (improvement > 0) {
+                    return (
+                      <p className="text-2xl font-black text-green-600">
+                        {correctImprovement > 0 ? `${correctImprovement} more correct than last time! 📈` : `${improvement}% improvement! 🎉`}
+                      </p>
+                    );
+                  } else if (improvement === 0) {
+                    return (
+                      <p className="text-2xl font-black text-blue-600">
+                        Consistent performance! Keep it up! 🎯
+                      </p>
+                    );
+                  } else {
+                    return (
+                      <p className="text-2xl font-black text-purple-600">
+                        Every session is practice! You're getting stronger! 💪
+                      </p>
+                    );
+                  }
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
 
         {!timedOut && finishTime !== undefined && (
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border-2 border-blue-200">
