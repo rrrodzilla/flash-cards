@@ -20,11 +20,17 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
+        rowPulse: {
+          '0%': { transform: 'scale(1)' },
+          '50%': { transform: 'scale(1.15)' },
+          '100%': { transform: 'scale(1)' },
+        },
       },
       animation: {
         float: 'float 3s ease-in-out infinite',
         shimmer: 'shimmer 1s ease-in-out forwards',
         fadeIn: 'fadeIn 200ms ease-out',
+        rowPulse: 'rowPulse 300ms ease-in-out',
       },
       scale: {
         '102': '1.02',

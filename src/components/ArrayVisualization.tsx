@@ -51,6 +51,8 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
   const [visibleDots, setVisibleDots] = useState(0);
   const [showTotal, setShowTotal] = useState(false);
   const [showEquation, setShowEquation] = useState(false);
+  const [completedRows, setCompletedRows] = useState(0);
+  const [lastCompletedRow, setLastCompletedRow] = useState<number | null>(null);
   const prefersReducedMotion = useReducedMotion();
 
   const totalDots = operand1 * operand2;
@@ -109,6 +111,33 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
       clearTimeout(equationTimer);
     };
   }, [totalDots, prefersReducedMotion, variant, onComplete, operand1, operand2]);
+
+  // Track row completion for pulse animation
+  useEffect(() => {
+    if (visibleDots === 0) {
+      setCompletedRows(0);
+      setLastCompletedRow(null);
+      return undefined;
+    }
+
+    // Check if a new row just completed
+    if (visibleDots % operand2 === 0) {
+      const newCompletedRows = visibleDots / operand2;
+      if (newCompletedRows > completedRows) {
+        setCompletedRows(newCompletedRows);
+        setLastCompletedRow(newCompletedRows - 1);
+
+        // Clear the lastCompletedRow after animation completes (300ms)
+        const timer = setTimeout(() => {
+          setLastCompletedRow(null);
+        }, 300);
+
+        return () => clearTimeout(timer);
+      }
+    }
+
+    return undefined;
+  }, [visibleDots, operand2, completedRows]);
 
   // Render symbolic representation for large problems
   if (isLargeProblem) {
@@ -204,12 +233,19 @@ export const ArrayVisualization: React.FC<ArrayVisualizationProps> = ({
             {Array.from({ length: operand2 }).map((_, colIndex) => {
               const dotIndex = rowIndex * operand2 + colIndex;
               const isVisible = dotIndex < visibleDots;
+              const isLastDotInRow = colIndex === operand2 - 1;
+              const isRowCompleted = rowIndex < completedRows;
+              const shouldPulse = !prefersReducedMotion && lastCompletedRow === rowIndex && isLastDotInRow;
 
               return (
                 <div
                   key={`${rowIndex}-${colIndex}`}
-                  className={`rounded-full bg-blue-500 transition-all duration-200 ${
+                  className={`rounded-full transition-all duration-200 ${
+                    isRowCompleted ? 'bg-blue-600' : 'bg-blue-500'
+                  } ${
                     isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
+                  } ${
+                    shouldPulse ? 'animate-rowPulse' : ''
                   }`}
                   style={{
                     width: `${dotSize}px`,
