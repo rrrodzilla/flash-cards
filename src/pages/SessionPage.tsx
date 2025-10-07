@@ -32,6 +32,7 @@ export default function SessionPage() {
   const [milestoneReached, setMilestoneReached] = useState<number | null>(null);
   const [showVisualization, setShowVisualization] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [waitingForContinue, setWaitingForContinue] = useState(false);
   const timerRef = useRef<number | null>(null);
   const startTimeRef = useRef<number>(0);
   // Track which session we've initialized to prevent duplicates in Strict Mode
@@ -252,25 +253,40 @@ export default function SessionPage() {
     } else {
       setFeedback('incorrect');
       setStreak(0);
+      setWaitingForContinue(true);
     }
 
-    const feedbackDelay = isCorrect ? 1500 : 2500;
+    // Only auto-advance on correct answers
+    if (isCorrect) {
+      setTimeout(() => {
+        setFeedback(null);
+        setAnswer('0');
+        setShowVisualization(false);
 
-    setTimeout(() => {
-      setFeedback(null);
-      setAnswer('0');
-      setShowVisualization(false);
-
-      if (currentCardIndex + 1 >= cards.length) {
-        handleSessionComplete(updatedCards as Card[]);
-      } else {
-        setCurrentCardIndex((prev) => prev + 1);
-      }
-    }, feedbackDelay);
+        if (currentCardIndex + 1 >= cards.length) {
+          handleSessionComplete(updatedCards as Card[]);
+        } else {
+          setCurrentCardIndex((prev) => prev + 1);
+        }
+      }, 1500);
+    }
   }, [answer, currentCardIndex, cards, feedback, handleSessionComplete, showVisualization]);
 
   const handleExit = () => {
     setShowExitModal(true);
+  };
+
+  const handleContinueAfterIncorrect = () => {
+    setWaitingForContinue(false);
+    setFeedback(null);
+    setAnswer('0');
+    setShowVisualization(false);
+
+    if (currentCardIndex + 1 >= cards.length) {
+      handleSessionComplete(cards as Card[]);
+    } else {
+      setCurrentCardIndex((prev) => prev + 1);
+    }
   };
 
   const confirmExit = () => {
@@ -479,6 +495,21 @@ export default function SessionPage() {
                         variant="compact"
                       />
                     </div>
+
+                    {/* Continue button for incorrect answers */}
+                    {waitingForContinue && (
+                      <div className="mt-6 flex justify-center animate-fadeIn">
+                        <Button
+                          onClick={handleContinueAfterIncorrect}
+                          variant="primary"
+                          fullWidth
+                          className="min-h-[56px] text-lg font-bold bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                          aria-label="Continue to next problem"
+                        >
+                          Got It! 👍
+                        </Button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
