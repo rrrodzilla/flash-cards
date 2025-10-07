@@ -1,14 +1,48 @@
 import React, { useEffect, useState } from 'react';
 
+/**
+ * Timer component props interface
+ */
 export interface TimerProps {
+  /** Total time allowed in seconds */
   totalSeconds: number;
+  /** Current remaining time in seconds */
   remainingSeconds: number;
+  /** Pause timer animations when true */
   isPaused?: boolean;
+  /** Visual display variant */
   variant?: 'linear' | 'circular';
+  /** Show time remaining as numbers */
   showNumbers?: boolean;
+  /** Size of the timer */
   size?: 'small' | 'medium' | 'large';
 }
 
+/**
+ * Timer Component
+ *
+ * A visual countdown timer with linear and circular variants.
+ * Features color-coded warnings (green > 25%, yellow 10-25%, red < 10%)
+ * and pulsing animation when time is critical.
+ * Designed for kids to easily understand time remaining.
+ *
+ * @example
+ * ```tsx
+ * <Timer
+ *   totalSeconds={300}
+ *   remainingSeconds={45}
+ *   variant="circular"
+ *   size="large"
+ * />
+ *
+ * <Timer
+ *   totalSeconds={60}
+ *   remainingSeconds={30}
+ *   variant="linear"
+ *   isPaused={true}
+ * />
+ * ```
+ */
 export const Timer: React.FC<TimerProps> = ({
   totalSeconds,
   remainingSeconds,
@@ -78,6 +112,7 @@ export const Timer: React.FC<TimerProps> = ({
         role="timer"
         aria-live="polite"
         aria-atomic="true"
+        aria-label={`${minutes} minutes and ${seconds} seconds remaining`}
       >
         <div className="relative">
           <svg width={circleSize} height={circleSize} className="rotate-[-90deg]">
@@ -114,7 +149,7 @@ export const Timer: React.FC<TimerProps> = ({
               <span
                 className={`font-bold ${sizeStyles[size]} ${
                   textColorClasses[getColor()]
-                }`}
+                } tabular-nums`}
               >
                 {minutes}:{seconds.toString().padStart(2, '0')}
               </span>
@@ -134,10 +169,11 @@ export const Timer: React.FC<TimerProps> = ({
       role="timer"
       aria-live="polite"
       aria-atomic="true"
+      aria-label={`${minutes} minutes and ${seconds} seconds remaining`}
     >
       {showNumbers && (
         <div className="flex items-center justify-between mb-2">
-          <span className={`font-bold ${sizeStyles[size]} ${textColorClasses[getColor()]}`}>
+          <span className={`font-bold ${sizeStyles[size]} ${textColorClasses[getColor()]} tabular-nums`}>
             {minutes}:{seconds.toString().padStart(2, '0')}
           </span>
           {isPaused && (

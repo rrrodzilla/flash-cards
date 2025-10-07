@@ -1,13 +1,45 @@
 import React, { useEffect, useState } from 'react';
 
+/**
+ * ScoreDisplay component props interface
+ */
 export interface ScoreDisplayProps {
+  /** Number of correct answers */
   score: number;
+  /** Total number of questions */
   total: number;
+  /** Enable count-up animation for score */
   animate?: boolean;
+  /** Size of the display */
   size?: 'small' | 'medium' | 'large';
+  /** Show percentage alongside score */
   showPercentage?: boolean;
 }
 
+/**
+ * ScoreDisplay Component
+ *
+ * An engaging score display with color-coded feedback and animations.
+ * Features count-up animation, performance-based colors, and encouraging messages.
+ * Designed to motivate children ages 8-12 with positive reinforcement.
+ *
+ * Score tiers:
+ * - 90%+: Green, "Amazing!" with 3 stars
+ * - 75-89%: Blue, "Great job!"
+ * - 60-74%: Yellow, "Good work!"
+ * - <60%: Red, "Keep practicing!"
+ *
+ * @example
+ * ```tsx
+ * <ScoreDisplay
+ *   score={18}
+ *   total={20}
+ *   animate={true}
+ *   size="large"
+ *   showPercentage={true}
+ * />
+ * ```
+ */
 export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
   score,
   total,
@@ -62,13 +94,6 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
     return 'from-red-50 to-red-100 border-red-200';
   };
 
-  const getEmoji = () => {
-    if (percentage >= 90) return '🌟';
-    if (percentage >= 75) return '😊';
-    if (percentage >= 60) return '🙂';
-    return '💪';
-  };
-
   const getMessage = () => {
     if (percentage >= 90) return 'Amazing!';
     if (percentage >= 75) return 'Great job!';
@@ -81,19 +106,19 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
       container: 'p-4',
       score: 'text-4xl',
       message: 'text-lg',
-      emoji: 'text-4xl',
+      stars: 'text-2xl',
     },
     medium: {
       container: 'p-6',
       score: 'text-6xl',
       message: 'text-2xl',
-      emoji: 'text-6xl',
+      stars: 'text-4xl',
     },
     large: {
       container: 'p-8',
       score: 'text-8xl',
       message: 'text-3xl',
-      emoji: 'text-8xl',
+      stars: 'text-6xl',
     },
   };
 
@@ -107,11 +132,7 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
       aria-live="polite"
     >
       <div className="text-center">
-        <div className={`${sizeStyles[size].emoji} mb-4 animate-bounce`} role="img" aria-label={getMessage()}>
-          {getEmoji()}
-        </div>
-
-        <div className={`font-bold ${sizeStyles[size].message} ${getScoreColor()} mb-2`}>
+        <div className={`font-bold ${sizeStyles[size].message} ${getScoreColor()} mb-4`}>
           {getMessage()}
         </div>
 
@@ -132,10 +153,10 @@ export const ScoreDisplay: React.FC<ScoreDisplayProps> = ({
         )}
 
         {percentage >= 90 && (
-          <div className="mt-6 flex items-center justify-center gap-2 text-2xl animate-pulse">
-            <span>⭐</span>
-            <span>⭐</span>
-            <span>⭐</span>
+          <div className={`mt-6 flex items-center justify-center gap-2 ${sizeStyles[size].stars} animate-pulse`}>
+            <span role="img" aria-label="star">⭐</span>
+            <span role="img" aria-label="star">⭐</span>
+            <span role="img" aria-label="star">⭐</span>
           </div>
         )}
       </div>

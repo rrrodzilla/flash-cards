@@ -1,13 +1,43 @@
 import React, { forwardRef } from 'react';
 
+/**
+ * Input component props interface
+ */
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  /** Label text displayed above the input */
   label?: string;
+  /** Error message displayed below the input */
   error?: string;
+  /** Helper text displayed below the input when no error is present */
   helperText?: string;
+  /** Makes input take full width of container */
   fullWidth?: boolean;
+  /** Size of the input, affects minimum height and padding */
   inputSize?: 'small' | 'medium' | 'large';
 }
 
+/**
+ * Input Component
+ *
+ * A mobile-first text input with labels, error handling, and accessibility features.
+ * Designed for children ages 8-12 with large touch targets (minimum 44px) and clear feedback.
+ *
+ * @example
+ * ```tsx
+ * <Input
+ *   label="Your Name"
+ *   placeholder="Enter your name"
+ *   fullWidth
+ * />
+ *
+ * <Input
+ *   label="Age"
+ *   type="number"
+ *   error="Age must be between 8 and 12"
+ *   inputSize="large"
+ * />
+ * ```
+ */
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   (
     {
@@ -26,7 +56,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
     const hasError = Boolean(error);
 
-    const baseStyles = 'w-full rounded-xl border-2 font-semibold transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100';
+    const baseStyles = 'w-full rounded-xl border-2 font-semibold transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 touch-manipulation';
 
     const sizeStyles = {
       small: 'min-h-[44px] px-4 py-2 text-base',
