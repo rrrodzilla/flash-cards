@@ -642,6 +642,52 @@ export function getCurrentSession(userId: string): Session | null {
   }, 'getCurrentSession');
 }
 
+/**
+ * Sets the session start time for timer restoration
+ */
+export function setSessionStartTime(startTime: number): void {
+  if (typeof startTime !== 'number' || startTime <= 0) {
+    console.warn('[Storage] setSessionStartTime: Invalid start time provided');
+    return;
+  }
+
+  safeStorageOperation(() => {
+    localStorage.setItem(StorageKeys.SESSION_START_TIME, startTime.toString());
+  }, 'setSessionStartTime');
+}
+
+/**
+ * Gets the session start time for timer restoration
+ * Returns null if no start time is stored
+ */
+export function getSessionStartTime(): number | null {
+  return safeStorageOperation(() => {
+    const startTime = localStorage.getItem(StorageKeys.SESSION_START_TIME);
+
+    if (!startTime) {
+      return null;
+    }
+
+    const parsed = parseInt(startTime, 10);
+
+    if (isNaN(parsed) || parsed <= 0) {
+      console.warn('[Storage] getSessionStartTime: Invalid start time in storage');
+      return null;
+    }
+
+    return parsed;
+  }, 'getSessionStartTime');
+}
+
+/**
+ * Clears the session start time from storage
+ */
+export function clearSessionStartTime(): void {
+  safeStorageOperation(() => {
+    localStorage.removeItem(StorageKeys.SESSION_START_TIME);
+  }, 'clearSessionStartTime');
+}
+
 // ============================================================================
 // DATA MANAGEMENT
 // ============================================================================

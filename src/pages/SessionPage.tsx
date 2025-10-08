@@ -7,6 +7,9 @@ import {
   createSession,
   updateSession,
   getCurrentSession,
+  setSessionStartTime,
+  getSessionStartTime,
+  clearSessionStartTime,
 } from "../storage";
 import { generateSessionProblems } from "../algorithms/weightedRandom";
 import type { Card } from "../types";
@@ -76,8 +79,9 @@ export default function SessionPage() {
       timedOut: true,
     });
 
-    // Clear current session marker
+    // Clear current session marker and start time
     localStorage.removeItem(StorageKeys.CURRENT_SESSION);
+    clearSessionStartTime();
 
     navigate("/session-end", {
       state: {
@@ -123,8 +127,25 @@ export default function SessionPage() {
       initializedSessionIdRef.current = existingSession.sessionId;
       setSessionId(existingSession.sessionId);
       setTotalTime(settings.timeLimit);
-      setTimeRemaining(settings.timeLimit);
-      startTimeRef.current = Date.now();
+
+      // Restore timer state from saved start time
+      const savedStartTime = getSessionStartTime();
+      if (savedStartTime) {
+        startTimeRef.current = savedStartTime;
+        const elapsed = Math.floor((Date.now() - savedStartTime) / 1000);
+        const remaining = Math.max(0, settings.timeLimit - elapsed);
+        setTimeRemaining(remaining);
+
+        // If time has already expired, trigger timeout immediately
+        if (remaining === 0) {
+          handleTimeout();
+        }
+      } else {
+        // Fallback if no start time saved (shouldn't happen, but be safe)
+        startTimeRef.current = Date.now();
+        setTimeRemaining(settings.timeLimit);
+        setSessionStartTime(startTimeRef.current);
+      }
     } else {
       // Create new session
       const settings = getSettings();
@@ -138,7 +159,10 @@ export default function SessionPage() {
       setSessionId(session.sessionId);
       setTotalTime(settings.timeLimit);
       setTimeRemaining(settings.timeLimit);
+
+      // Store start time for timer restoration on refresh
       startTimeRef.current = Date.now();
+      setSessionStartTime(startTimeRef.current);
     }
 
     return () => {
@@ -147,7 +171,7 @@ export default function SessionPage() {
         clearInterval(timerRef.current);
       }
     };
-  }, [userId, navigate]);
+  }, [userId, navigate, handleTimeout]);
 
   // Separate effect for timer to ensure it always runs when sessionId is set
   useEffect(() => {
@@ -218,8 +242,9 @@ export default function SessionPage() {
         timedOut: false,
       });
 
-      // Clear current session marker
+      // Clear current session marker and start time
       localStorage.removeItem(StorageKeys.CURRENT_SESSION);
+      clearSessionStartTime();
 
       navigate("/session-end", {
         state: {
@@ -348,8 +373,9 @@ export default function SessionPage() {
       timedOut: true,
     });
 
-    // Clear current session marker
+    // Clear current session marker and start time
     localStorage.removeItem(StorageKeys.CURRENT_SESSION);
+    clearSessionStartTime();
 
     navigate("/users");
   };

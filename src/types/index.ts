@@ -60,6 +60,7 @@ export enum StorageKeys {
   SESSIONS = 'flash-cards-sessions',
   CURRENT_SESSION = 'flash-cards-current-session',
   CURRENT_USER = 'flash-cards-current-user',
+  SESSION_START_TIME = 'flash-cards-session-start-time',
 }
 
 /**
