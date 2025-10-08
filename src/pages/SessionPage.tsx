@@ -24,6 +24,9 @@ import {
   SessionPageSkeleton,
   ArrayVisualization,
 } from "../components";
+import { Button as ShadcnButton } from "../components/ui/button";
+import { Badge } from "../components/ui/badge";
+import { Progress } from "../components/ui/progress";
 import { StarBurst } from "../components/StarBurst";
 
 interface SessionCard extends Omit<Card, "userAnswer" | "isCorrect"> {
@@ -300,7 +303,8 @@ export default function SessionPage() {
         const newProgress = ((currentCardIndex + 1) / cards.length) * 100;
         const milestones = [25, 50, 75, 100];
         const reachedMilestone = milestones.find(
-          (m) => newProgress >= m && (currentCardIndex / cards.length) * 100 < m,
+          (m) =>
+            newProgress >= m && (currentCardIndex / cards.length) * 100 < m,
         );
 
         if (reachedMilestone) {
@@ -395,13 +399,15 @@ export default function SessionPage() {
       <header className="bg-white shadow-sm border-b-2 border-blue-100 p-4">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center gap-4">
-            <button
+            <ShadcnButton
               onClick={handleExit}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 hover:bg-red-100 rounded-xl transition-all active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-300 text-red-600"
+              variant="ghost"
+              size="icon"
+              className="min-w-[44px] min-h-[44px] hover:bg-red-100 rounded-xl transition-all active:scale-95 focus:outline-none focus:ring-4 focus:ring-red-300 text-red-600"
               aria-label="Exit session"
             >
               <X size={24} />
-            </button>
+            </ShadcnButton>
             <div>
               <h1 className="text-xl font-bold text-gray-900">{user.name}</h1>
               <p className="text-sm text-gray-600">
@@ -411,32 +417,31 @@ export default function SessionPage() {
           </div>
 
           <div className="text-right">
-            <div
-              className="text-2xl font-black text-blue-600 tabular-nums"
+            <Badge
+              variant="secondary"
+              className="text-2xl font-black text-blue-600 tabular-nums px-3 py-1 bg-blue-50 border-blue-200"
               aria-live="polite"
               aria-atomic="true"
               aria-label={`Current score: ${score} out of ${cards.length}`}
             >
               {score}/{cards.length}
-            </div>
-            <p className="text-xs text-gray-600">Score</p>
+            </Badge>
+            <p className="text-xs text-gray-600 mt-1">Score</p>
           </div>
         </div>
 
         <div className="max-w-4xl mx-auto mt-4 relative">
-          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-            <div
-              className={`h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out ${
-                milestoneReached ? "animate-milestonePulse" : ""
-              }`}
-              style={{ width: `${progress}%` }}
-              role="progressbar"
-              aria-valuenow={currentCardIndex + 1}
-              aria-valuemin={0}
-              aria-valuemax={cards.length}
-              aria-label={`Progress: ${currentCardIndex + 1} of ${cards.length} cards`}
-            />
-          </div>
+          <Progress
+            value={progress}
+            className="w-full h-3 bg-gray-200 rounded-full shadow-inner"
+            indicatorClassName={`bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out ${
+              milestoneReached ? "animate-milestonePulse" : ""
+            }`}
+            aria-valuenow={currentCardIndex + 1}
+            aria-valuemin={0}
+            aria-valuemax={cards.length}
+            aria-label={`Progress: ${currentCardIndex + 1} of ${cards.length} cards`}
+          />
 
           {milestones.map((milestone) => {
             const milestonePosition = milestone;
@@ -499,14 +504,10 @@ export default function SessionPage() {
                 starCount={12}
               />
             )}
-            <div className="text-center mb-8">
-              <p className="text-gray-600 text-xl mb-0 font-semibold">
-                What is
-              </p>
+            <div className="text-center mb-6">
               <div className="text-8xl font-black text-gray-900 mb-0 tabular-nums">
                 {currentCard.problem}
               </div>
-              <p className="text-gray-600 text-xl font-semibold">?</p>
             </div>
 
             {/* Show Me How Button */}
