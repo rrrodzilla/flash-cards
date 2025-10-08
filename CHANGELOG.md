@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/rrrodzilla/flash-cards/compare/v1.2.0...v1.3.0) (2025-10-08)
+
+
+### Features
+
+* auto-trigger deploy workflow after semantic-release ([b66f164](https://github.com/rrrodzilla/flash-cards/commit/b66f1640648a571bd9a80077aa0c0063f35e3304))
+
 # [1.2.0](https://github.com/rrrodzilla/flash-cards/compare/v1.1.0...v1.2.0) (2025-10-08)
 
 
