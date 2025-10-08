@@ -100,6 +100,7 @@ export default defineConfig({
     port: 3000,
     strictPort: false,
     open: true,
+    allowedHosts: ['matilda.tail93cb7e.ts.net'],
   },
   preview: {
     host: true,

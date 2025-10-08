@@ -457,8 +457,8 @@ export default function SessionPage() {
                   size={20}
                   className={`transform -translate-x-1/2 transition-all duration-300 ${
                     isPassed
-                      ? "text-yellow-500 fill-yellow-500 scale-110"
-                      : "text-gray-400"
+                      ? "text-yellow-500 fill-yellow-500 scale-110 drop-shadow-md"
+                      : "text-gray-300 fill-gray-100"
                   } ${
                     milestoneReached === milestone
                       ? "animate-milestonePulse"
