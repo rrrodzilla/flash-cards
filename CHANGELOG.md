@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/rrrodzilla/flash-cards/compare/v1.3.0...v1.3.1) (2025-10-08)
+
+
+### Bug Fixes
+
+* add actions write permission to trigger deploy workflow ([2ef6d13](https://github.com/rrrodzilla/flash-cards/commit/2ef6d13acb9df7e5640edb2eedd08ed9575111de))
+
 # [1.3.0](https://github.com/rrrodzilla/flash-cards/compare/v1.2.0...v1.3.0) (2025-10-08)
 
 
