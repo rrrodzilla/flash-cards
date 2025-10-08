@@ -170,27 +170,15 @@ export const Timer: React.FC<TimerProps> = ({
 
   return (
     <div
-      className={cn('w-full', pulseWarning && 'animate-pulse')}
+      className={cn('w-full relative', pulseWarning && 'animate-pulse')}
       role="timer"
       aria-live="polite"
       aria-atomic="true"
       aria-label={`${minutes} minutes and ${seconds} seconds remaining`}
     >
-      {showNumbers && (
-        <div className="flex items-center justify-between mb-2">
-          <span className={cn('font-bold tabular-nums', sizeStyles[size], textColorClasses[getColor()])}>
-            {minutes}:{seconds.toString().padStart(2, '0')}
-          </span>
-          {isPaused && (
-            <Badge variant="secondary" className="text-sm">
-              Paused
-            </Badge>
-          )}
-        </div>
-      )}
       <Progress
         value={percentage}
-        className="h-6 bg-gray-200 shadow-inner"
+        className="h-10 bg-gray-200 shadow-inner"
         aria-valuenow={remainingSeconds}
         aria-valuemin={0}
         aria-valuemax={totalSeconds}
@@ -200,6 +188,25 @@ export const Timer: React.FC<TimerProps> = ({
           progressBarColors[getColor()]
         )}
       />
+      {showNumbers && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span
+            className={cn(
+              'font-bold tabular-nums text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]',
+              sizeStyles[size]
+            )}
+          >
+            {minutes}:{seconds.toString().padStart(2, '0')}
+          </span>
+        </div>
+      )}
+      {isPaused && (
+        <div className="absolute top-1/2 right-2 -translate-y-1/2">
+          <Badge variant="secondary" className="text-sm shadow-md">
+            Paused
+          </Badge>
+        </div>
+      )}
     </div>
   );
 };
