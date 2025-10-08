@@ -695,12 +695,38 @@ export function clearSessionStartTime(): void {
 /**
  * Clears all application data from localStorage
  * This is a destructive operation that cannot be undone
+ *
+ * Clears:
+ * - All StorageKeys (users, settings, sessions, current session, current user, session start time)
+ * - Tutorial seen flags for all users (tutorial_seen_${userId})
+ * - Schema version key
  */
 export function clearAllData(): void {
   safeStorageOperation(() => {
+    // Clear all StorageKeys
     Object.values(StorageKeys).forEach((key) => {
       localStorage.removeItem(key);
     });
+
+    // Clear schema version
+    localStorage.removeItem(SCHEMA_VERSION_KEY);
+
+    // Clear all tutorial-related keys
+    // Get all users before clearing to find their tutorial keys
+    const users = getUsers();
+    users.forEach((user) => {
+      localStorage.removeItem(`tutorial_seen_${user.id}`);
+    });
+
+    // Additional safety: clear any remaining flash-cards-* or tutorial_seen_* keys
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('flash-cards-') || key.startsWith('tutorial_seen_'))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
   }, 'clearAllData');
 }
 

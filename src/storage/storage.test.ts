@@ -509,6 +509,73 @@ describe('Data Management', () => {
       expect(getUsers()).toEqual([]);
       expect(getSettings()).toEqual(DEFAULT_SETTINGS);
     });
+
+    it('should clear tutorial flags and schema version', () => {
+      const user1 = createUser('Alice');
+      const user2 = createUser('Bob');
+
+      // Set tutorial flags for both users
+      localStorage.setItem(`tutorial_seen_${user1.id}`, 'true');
+      localStorage.setItem(`tutorial_seen_${user2.id}`, 'true');
+
+      // Set schema version
+      localStorage.setItem('flash-cards-schema-version', '1');
+
+      // Verify they exist
+      expect(localStorage.getItem(`tutorial_seen_${user1.id}`)).toBe('true');
+      expect(localStorage.getItem(`tutorial_seen_${user2.id}`)).toBe('true');
+      expect(localStorage.getItem('flash-cards-schema-version')).toBe('1');
+
+      // Clear all data
+      clearAllData();
+
+      // Verify tutorial flags are cleared
+      expect(localStorage.getItem(`tutorial_seen_${user1.id}`)).toBeNull();
+      expect(localStorage.getItem(`tutorial_seen_${user2.id}`)).toBeNull();
+
+      // Verify schema version is cleared
+      expect(localStorage.getItem('flash-cards-schema-version')).toBeNull();
+
+      // Verify users are cleared
+      expect(getUsers()).toEqual([]);
+    });
+
+    it('should clear all flash-cards-* and tutorial_seen_* keys comprehensively', () => {
+      // Create data
+      const user = createUser('Alice');
+      updateSettings({ cardsPerSession: 50 });
+
+      // Add some edge case keys
+      localStorage.setItem('flash-cards-custom-key', 'test');
+      localStorage.setItem(`tutorial_seen_${user.id}`, 'true');
+      localStorage.setItem('tutorial_seen_orphaned_user', 'true');
+      localStorage.setItem('unrelated-key', 'should-remain');
+
+      // Clear all data
+      clearAllData();
+
+      // Verify all flash-cards-* keys are cleared
+      let flashCardsKeysCount = 0;
+      let tutorialKeysCount = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith('flash-cards-')) {
+          flashCardsKeysCount++;
+        }
+        if (key?.startsWith('tutorial_seen_')) {
+          tutorialKeysCount++;
+        }
+      }
+
+      expect(flashCardsKeysCount).toBe(0);
+      expect(tutorialKeysCount).toBe(0);
+
+      // Verify unrelated key remains
+      expect(localStorage.getItem('unrelated-key')).toBe('should-remain');
+
+      // Clean up
+      localStorage.removeItem('unrelated-key');
+    });
   });
 
   describe('exportData', () => {

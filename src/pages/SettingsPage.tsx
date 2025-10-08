@@ -8,7 +8,7 @@ import { useApp } from '../context';
 
 export default function SettingsPage() {
   const navigate = useNavigate();
-  const { setSettings: setAppSettings, currentUser } = useApp();
+  const { setSettings: setAppSettings, currentUser, setCurrentUser } = useApp();
   const [settings, setSettings] = useState<Settings>(getSettings());
   const [isClearDataModalOpen, setIsClearDataModalOpen] = useState(false);
   const [error, setError] = useState('');
@@ -79,6 +79,7 @@ export default function SettingsPage() {
 
   const handleClearAllData = () => {
     clearAllData();
+    setCurrentUser(null);
     setIsClearDataModalOpen(false);
     navigate('/');
   };
