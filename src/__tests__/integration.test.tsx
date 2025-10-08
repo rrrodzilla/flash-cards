@@ -612,6 +612,62 @@ describe('Integration Tests', () => {
   });
 
   describe('Array Visualization Integration', () => {
+    it('should correctly track correct answers when visualization is shown', () => {
+      const user = createUser('Viz Correct Answer Test User');
+      const settings = getSettings();
+      const session = createSession(user.id, settings);
+      const problems = generateSessionProblems(settings, user.id);
+
+      // Bug fix test: When user views visualization and then answers correctly,
+      // the card should be marked as correct (isCorrect: true) but not count toward score
+      const problem0 = problems[0];
+      if (!problem0) throw new Error('Problem 0 not found');
+
+      const cardWithVizShown: Card = {
+        ...problem0,
+        userAnswer: problem0.correctAnswer, // User answered correctly
+        isCorrect: true, // Should be marked as correct
+        visualizationShown: true, // But visualization was shown
+        countsTowardScore: false, // So it shouldn't count toward score
+      };
+
+      const problem1 = problems[1];
+      if (!problem1) throw new Error('Problem 1 not found');
+
+      const cardWithoutViz: Card = {
+        ...problem1,
+        userAnswer: problem1.correctAnswer, // User answered correctly
+        isCorrect: true, // Marked as correct
+        visualizationShown: false, // No visualization shown
+        countsTowardScore: true, // Should count toward score
+      };
+
+      const completedCards = [cardWithVizShown, cardWithoutViz];
+
+      // Calculate score: only cards with countsTowardScore: true (or undefined) and isCorrect: true
+      const score = completedCards.filter((c) => c.isCorrect && c.countsTowardScore !== false).length;
+
+      updateSession(session.sessionId, {
+        cards: completedCards,
+        score, // Should be 1 (only second card counts)
+        totalCards: completedCards.length,
+        timedOut: false,
+      });
+
+      const sessions = getSessions(user.id);
+
+      // Both cards should be marked as correct
+      expect(sessions[0]?.cards[0]?.isCorrect).toBe(true);
+      expect(sessions[0]?.cards[1]?.isCorrect).toBe(true);
+
+      // But score should only be 1 (second card only)
+      expect(sessions[0]?.score).toBe(1);
+
+      // Verify countsTowardScore flags
+      expect(sessions[0]?.cards[0]?.countsTowardScore).toBe(false);
+      expect(sessions[0]?.cards[1]?.countsTowardScore).toBe(true);
+    });
+
     it('should track visualizationShown in card when used', () => {
       const user = createUser('Visualization Test User');
       const settings = getSettings();

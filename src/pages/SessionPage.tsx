@@ -255,30 +255,36 @@ export default function SessionPage() {
     updatedCards[currentCardIndex] = updatedCard;
     setCards(updatedCards);
 
-    if (isCorrect && !showVisualization) {
-      setScore((prev) => prev + 1);
+    if (isCorrect) {
+      // Always show correct feedback when answer is correct
       setFeedback("correct");
       setShowStarBurst(true);
 
-      setStreak((prev) => {
-        const newStreak = prev + 1;
-        if (newStreak >= 3) {
-          setShowStreakConfetti(true);
+      // Only increment score and streak if visualization was NOT shown
+      if (!showVisualization) {
+        setScore((prev) => prev + 1);
+
+        setStreak((prev) => {
+          const newStreak = prev + 1;
+          if (newStreak >= 3) {
+            setShowStreakConfetti(true);
+          }
+          return newStreak;
+        });
+
+        const newProgress = ((currentCardIndex + 1) / cards.length) * 100;
+        const milestones = [25, 50, 75, 100];
+        const reachedMilestone = milestones.find(
+          (m) => newProgress >= m && (currentCardIndex / cards.length) * 100 < m,
+        );
+
+        if (reachedMilestone) {
+          setMilestoneReached(reachedMilestone);
+          setTimeout(() => setMilestoneReached(null), 1000);
         }
-        return newStreak;
-      });
-
-      const newProgress = ((currentCardIndex + 1) / cards.length) * 100;
-      const milestones = [25, 50, 75, 100];
-      const reachedMilestone = milestones.find(
-        (m) => newProgress >= m && (currentCardIndex / cards.length) * 100 < m,
-      );
-
-      if (reachedMilestone) {
-        setMilestoneReached(reachedMilestone);
-        setTimeout(() => setMilestoneReached(null), 1000);
       }
     } else {
+      // Answer is incorrect
       setFeedback("incorrect");
       setStreak(0);
       setWaitingForContinue(true);
