@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Settings, Users, Sparkles } from 'lucide-react';
+import { Settings, Gamepad2, Sparkles } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { SkipLink } from '../components';
 
@@ -66,8 +66,8 @@ export default function SplashPage() {
           className="flex items-center justify-center gap-3 w-full bg-gradient-to-br from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-10 py-6 rounded-3xl text-2xl font-black shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-95 transition-all duration-200 min-h-[80px] border-4 border-white/30 animate-[pulse_2s_ease-in-out_infinite]"
           aria-label="Go to users page"
         >
-          <Users size={36} />
-          <span>Start Playing! 🎮</span>
+          <Gamepad2 size={28} />
+          <span>Start Playing!</span>
         </button>
 
         <button
@@ -75,8 +75,8 @@ export default function SplashPage() {
           className="flex items-center justify-center gap-2 w-full bg-white text-gray-700 px-6 py-4 rounded-2xl text-lg font-semibold shadow-lg hover:shadow-xl hover:scale-102 active:scale-95 transition-all duration-200 min-h-[60px] border-2 border-gray-200 hover:border-gray-300"
           aria-label="Go to settings page"
         >
-          <Settings size={24} />
-          <span>⚙️ Settings</span>
+          <Settings size={28} />
+          <span>Settings</span>
         </button>
       </div>
 
