@@ -500,7 +500,7 @@ export default function SessionPage() {
               <StarBurst
                 isActive={showStarBurst}
                 onComplete={() => setShowStarBurst(false)}
-                duration={1000}
+                duration={500}
                 starCount={12}
               />
             )}
