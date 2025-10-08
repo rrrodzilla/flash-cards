@@ -1,3 +1,15 @@
+# [1.2.0](https://github.com/rrrodzilla/flash-cards/compare/v1.1.0...v1.2.0) (2025-10-08)
+
+
+### Bug Fixes
+
+* add contents write permission to deploy workflow ([975370f](https://github.com/rrrodzilla/flash-cards/commit/975370f8e5e307c63488b7987278215b5fa7ba0a))
+
+
+### Features
+
+* add workflow_dispatch trigger to deploy workflow for manual deployments ([a424399](https://github.com/rrrodzilla/flash-cards/commit/a4243991e036d7a866ec6923c52996b403e92fed))
+
 # [1.1.0](https://github.com/rrrodzilla/flash-cards/compare/v1.0.0...v1.1.0) (2025-10-08)
 
 
