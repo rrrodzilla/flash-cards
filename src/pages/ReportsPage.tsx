@@ -10,9 +10,13 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
 } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from '../components/ui/chart';
 import {
   StatCard,
   AchievementBadge,
@@ -165,6 +169,20 @@ export default function ReportsPage() {
       },
     ];
   }, [sessions]);
+
+  const scoreChartConfig = {
+    score: {
+      label: 'Score',
+      color: '#3B82F6',
+    },
+  } satisfies ChartConfig;
+
+  const practiceChartConfig = {
+    opportunities: {
+      label: 'Practice Count',
+      color: '#10B981',
+    },
+  } satisfies ChartConfig;
 
   const scoreOverTimeData = useMemo(() => {
     return sessions
@@ -353,29 +371,34 @@ export default function ReportsPage() {
             <div className="grid md:grid-cols-2 gap-6 mb-8">
               <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Score Journey 📈</h2>
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={scoreOverTimeData}>
+                <ChartContainer config={scoreChartConfig} className="h-[300px] w-full">
+                  <LineChart
+                    data={scoreOverTimeData}
+                    accessibilityLayer
+                    margin={{ top: 5, right: 10, bottom: 5, left: 0 }}
+                  >
                     <XAxis
                       dataKey="session"
                       tick={{ fontSize: 14, fontWeight: 600 }}
                       stroke="#6B7280"
+                      tickLine={false}
+                      axisLine={false}
                     />
                     <YAxis
                       domain={[0, 100]}
                       tick={{ fontSize: 14, fontWeight: 600 }}
                       stroke="#6B7280"
+                      tickLine={false}
+                      axisLine={false}
+                      width={40}
                     />
-                    <Tooltip
-                      formatter={(value: number) => [`${value}%`, 'Score']}
-                      labelFormatter={(label) => `Session ${label}`}
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '2px solid #3B82F6',
-                        borderRadius: '12px',
-                        fontSize: '16px',
-                        fontWeight: 600,
-                        padding: '12px',
-                      }}
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(label) => `Session ${String(label)}`}
+                          formatter={(value) => [`${String(value)}%`, 'Score']}
+                        />
+                      }
                     />
                     <Line
                       type="monotone"
@@ -402,39 +425,44 @@ export default function ReportsPage() {
                       </linearGradient>
                     </defs>
                   </LineChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               </div>
 
               <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Numbers to Practice! 🎯</h2>
                 <p className="text-sm text-gray-600 mb-4">These numbers need more adventures!</p>
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={practiceNumbersData}>
+                <ChartContainer config={practiceChartConfig} className="h-[300px] w-full">
+                  <BarChart
+                    data={practiceNumbersData}
+                    accessibilityLayer
+                    margin={{ top: 5, right: 10, bottom: 5, left: 0 }}
+                  >
                     <XAxis
                       dataKey="number"
                       tick={{ fontSize: 14, fontWeight: 600 }}
                       stroke="#6B7280"
+                      tickLine={false}
+                      axisLine={false}
                     />
                     <YAxis
                       tick={{ fontSize: 14, fontWeight: 600 }}
                       stroke="#6B7280"
+                      tickLine={false}
+                      axisLine={false}
+                      width={40}
                     />
-                    <Tooltip
-                      formatter={(value: number, name: string) => {
-                        if (name === 'opportunities') {
-                          return [value, 'Practice Count'];
-                        }
-                        return [value, name];
-                      }}
-                      labelFormatter={(label) => `Number ${label}`}
-                      contentStyle={{
-                        backgroundColor: 'white',
-                        border: '2px solid #10B981',
-                        borderRadius: '12px',
-                        fontSize: '16px',
-                        fontWeight: 600,
-                        padding: '12px',
-                      }}
+                    <ChartTooltip
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(label) => `Number ${label}`}
+                          formatter={(value, name) => {
+                            if (name === 'opportunities') {
+                              return [value, 'Practice Count'];
+                            }
+                            return [value, name];
+                          }}
+                        />
+                      }
                     />
                     <Bar
                       dataKey="opportunities"
@@ -448,7 +476,7 @@ export default function ReportsPage() {
                       </linearGradient>
                     </defs>
                   </BarChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               </div>
             </div>
 
