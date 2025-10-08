@@ -369,114 +369,118 @@ export default function ReportsPage() {
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100 min-w-0">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Score Journey 📈</h2>
-                <ChartContainer config={scoreChartConfig} className="h-[300px] w-full">
-                  <LineChart
-                    data={scoreOverTimeData}
-                    accessibilityLayer
-                    margin={{ top: 5, right: 10, bottom: 5, left: 0 }}
-                  >
-                    <XAxis
-                      dataKey="session"
-                      tick={{ fontSize: 14, fontWeight: 600 }}
-                      stroke="#6B7280"
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      domain={[0, 100]}
-                      tick={{ fontSize: 14, fontWeight: 600 }}
-                      stroke="#6B7280"
-                      tickLine={false}
-                      axisLine={false}
-                      width={40}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent
-                          labelFormatter={(label) => `Session ${String(label)}`}
-                          formatter={(value) => [`${String(value)}%`, 'Score']}
-                        />
-                      }
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      stroke="url(#blueGradient)"
-                      strokeWidth={4}
-                      dot={{
-                        fill: '#3B82F6',
-                        r: 12,
-                        strokeWidth: 3,
-                        stroke: 'white',
-                      }}
-                      activeDot={{
-                        r: 14,
-                        fill: '#2563EB',
-                        strokeWidth: 4,
-                        stroke: 'white',
-                      }}
-                    />
-                    <defs>
-                      <linearGradient id="blueGradient" x1="0" y1="0" x2="1" y2="0">
-                        <stop offset="0%" stopColor="#3B82F6" />
-                        <stop offset="100%" stopColor="#8B5CF6" />
-                      </linearGradient>
-                    </defs>
-                  </LineChart>
-                </ChartContainer>
+                <div className="w-full overflow-hidden">
+                  <ChartContainer config={scoreChartConfig} className="h-[300px] w-full max-w-full">
+                    <LineChart
+                      data={scoreOverTimeData}
+                      accessibilityLayer
+                      margin={{ top: 5, right: 5, bottom: 5, left: -20 }}
+                    >
+                      <XAxis
+                        dataKey="session"
+                        tick={{ fontSize: 12, fontWeight: 600 }}
+                        stroke="#6B7280"
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        tick={{ fontSize: 12, fontWeight: 600 }}
+                        stroke="#6B7280"
+                        tickLine={false}
+                        axisLine={false}
+                        width={35}
+                      />
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            labelFormatter={(label) => `Session ${String(label)}`}
+                            formatter={(value) => [`${String(value)}%`, 'Score']}
+                          />
+                        }
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="score"
+                        stroke="url(#blueGradient)"
+                        strokeWidth={4}
+                        dot={{
+                          fill: '#3B82F6',
+                          r: 12,
+                          strokeWidth: 3,
+                          stroke: 'white',
+                        }}
+                        activeDot={{
+                          r: 14,
+                          fill: '#2563EB',
+                          strokeWidth: 4,
+                          stroke: 'white',
+                        }}
+                      />
+                      <defs>
+                        <linearGradient id="blueGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#3B82F6" />
+                          <stop offset="100%" stopColor="#8B5CF6" />
+                        </linearGradient>
+                      </defs>
+                    </LineChart>
+                  </ChartContainer>
+                </div>
               </div>
 
-              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
+              <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100 min-w-0">
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Numbers to Practice! 🎯</h2>
                 <p className="text-sm text-gray-600 mb-4">These numbers need more adventures!</p>
-                <ChartContainer config={practiceChartConfig} className="h-[300px] w-full">
-                  <BarChart
-                    data={practiceNumbersData}
-                    accessibilityLayer
-                    margin={{ top: 5, right: 10, bottom: 5, left: 0 }}
-                  >
-                    <XAxis
-                      dataKey="number"
-                      tick={{ fontSize: 14, fontWeight: 600 }}
-                      stroke="#6B7280"
-                      tickLine={false}
-                      axisLine={false}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 14, fontWeight: 600 }}
-                      stroke="#6B7280"
-                      tickLine={false}
-                      axisLine={false}
-                      width={40}
-                    />
-                    <ChartTooltip
-                      content={
-                        <ChartTooltipContent
-                          labelFormatter={(label) => `Number ${label}`}
-                          formatter={(value, name) => {
-                            if (name === 'opportunities') {
-                              return [value, 'Practice Count'];
-                            }
-                            return [value, name];
-                          }}
-                        />
-                      }
-                    />
-                    <Bar
-                      dataKey="opportunities"
-                      fill="url(#greenGradient)"
-                      radius={[12, 12, 0, 0]}
-                    />
-                    <defs>
-                      <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#34D399" />
-                        <stop offset="100%" stopColor="#10B981" />
-                      </linearGradient>
-                    </defs>
-                  </BarChart>
-                </ChartContainer>
+                <div className="w-full overflow-hidden">
+                  <ChartContainer config={practiceChartConfig} className="h-[300px] w-full max-w-full">
+                    <BarChart
+                      data={practiceNumbersData}
+                      accessibilityLayer
+                      margin={{ top: 5, right: 5, bottom: 5, left: -20 }}
+                    >
+                      <XAxis
+                        dataKey="number"
+                        tick={{ fontSize: 12, fontWeight: 600 }}
+                        stroke="#6B7280"
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 12, fontWeight: 600 }}
+                        stroke="#6B7280"
+                        tickLine={false}
+                        axisLine={false}
+                        width={35}
+                      />
+                      <ChartTooltip
+                        content={
+                          <ChartTooltipContent
+                            labelFormatter={(label) => `Number ${label}`}
+                            formatter={(value, name) => {
+                              if (name === 'opportunities') {
+                                return [value, 'Practice Count'];
+                              }
+                              return [value, name];
+                            }}
+                          />
+                        }
+                      />
+                      <Bar
+                        dataKey="opportunities"
+                        fill="url(#greenGradient)"
+                        radius={[12, 12, 0, 0]}
+                      />
+                      <defs>
+                        <linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#34D399" />
+                          <stop offset="100%" stopColor="#10B981" />
+                        </linearGradient>
+                      </defs>
+                    </BarChart>
+                  </ChartContainer>
+                </div>
               </div>
             </div>
 
