@@ -31,6 +31,7 @@ pnpm lint             # ESLint validation
 
 # Utilities
 pnpm demo             # Run weighted randomization demo (tsx src/algorithms/demo.ts)
+pnpm generate-icons   # Generate PWA icons from SVG (requires sharp)
 ```
 
 ## Technology Stack
@@ -340,6 +341,205 @@ See `ISSUES.md` for detailed list. All issues are minor, no blockers for product
 - **Orientation**: Portrait-first (can support landscape)
 - **Performance**: Code-split chunks, lazy loading
 - **Offline**: PWA with service worker (configured)
+
+## Progressive Web App (PWA) Installation
+
+The application is configured as a fully installable Progressive Web App with offline support.
+
+### PWA Features
+
+**Core Capabilities**:
+- Installable on iOS, Android, and desktop platforms
+- Offline-first architecture with intelligent caching
+- App-like experience with standalone display mode
+- Background updates with user notification
+- Optimized for mobile performance
+
+**Service Worker Configuration**:
+- Auto-update strategy with user confirmation
+- Multi-layer caching strategy:
+  - App shell: NetworkFirst (3s timeout, 7-day cache)
+  - Static assets: CacheFirst (1-year cache)
+  - Images: CacheFirst (30-day cache)
+  - Google Fonts: CacheFirst (1-year cache)
+- Offline fallback to cached content
+- Automatic cleanup of outdated caches
+
+**Manifest Details**:
+- App Name: "Flash Cards - Multiplication Practice"
+- Short Name: "Flash Cards"
+- Theme Color: #3b82f6 (blue)
+- Display Mode: standalone (full-screen app)
+- Orientation: portrait (mobile-first)
+- Categories: education, kids, games
+
+### Installing the PWA
+
+#### iOS (iPhone/iPad)
+
+1. Open Safari browser (Chrome not supported for iOS PWA)
+2. Navigate to the app URL
+3. Tap the Share button (square with arrow pointing up)
+4. Scroll down and tap "Add to Home Screen"
+5. Edit the name if desired (default: "Flash Cards")
+6. Tap "Add" in the top-right corner
+7. The app icon appears on your home screen
+
+**iOS Notes**:
+- Safari is required for installation (iOS limitation)
+- App icon will display without browser chrome
+- No back button visible in standalone mode
+- Uses iOS status bar styling (matches theme color)
+- Full offline support once installed
+
+#### Android (Phone/Tablet)
+
+**Chrome Browser**:
+1. Open Chrome browser
+2. Navigate to the app URL
+3. Wait for the "Add to Home screen" banner to appear (automatic)
+4. Tap "Install" or "Add"
+5. Confirm installation
+6. The app icon appears on your home screen
+
+**Alternative Method**:
+1. Tap the three-dot menu in Chrome
+2. Select "Install app" or "Add to Home screen"
+3. Confirm installation
+
+**Android Notes**:
+- Works in Chrome, Edge, Samsung Internet, Firefox
+- Automatic install prompt after engagement criteria
+- Displays in app drawer and home screen
+- Full offline support with background sync
+- Can be uninstalled like native apps
+
+#### Desktop (Windows/Mac/Linux)
+
+**Chrome/Edge/Brave**:
+1. Open the browser
+2. Navigate to the app URL
+3. Look for install icon in address bar (⊕ or computer icon)
+4. Click the install icon
+5. Click "Install" in the dialog
+6. App opens in standalone window
+
+**Alternative Method**:
+1. Click the three-dot menu
+2. Select "Install [App Name]..."
+3. Confirm installation
+
+**Desktop Notes**:
+- App opens in dedicated window (no browser UI)
+- Pinnable to taskbar/dock
+- Full keyboard navigation support
+- Offline support with service worker
+- Can be uninstalled from Chrome settings
+
+### Verifying PWA Installation
+
+**Check Service Worker**:
+1. Open browser DevTools (F12)
+2. Go to Application tab (Chrome) or Storage tab (Firefox)
+3. Check "Service Workers" section
+4. Should show active service worker for the app domain
+
+**Check Manifest**:
+1. In DevTools Application tab
+2. Click "Manifest" in left sidebar
+3. Verify icon display and app metadata
+4. Check installability status
+
+**Lighthouse PWA Audit**:
+1. Open Chrome DevTools
+2. Go to Lighthouse tab
+3. Select "Progressive Web App" category
+4. Run audit
+5. Should score 90+ for PWA criteria
+
+### Offline Functionality
+
+**What Works Offline**:
+- Full app functionality (all routes, features)
+- Create and manage users
+- Practice sessions
+- View historical reports
+- All localStorage data persistence
+
+**What Requires Network**:
+- Initial app download
+- Service worker updates
+- Google Fonts (cached after first load)
+- External resources (if any added later)
+
+**Cache Management**:
+- Service worker caches cleared on version updates
+- Browser cache settings apply
+- Can clear cache in browser settings
+- localStorage persists independently
+
+### Development PWA Testing
+
+**Enable PWA in Development**:
+```bash
+pnpm dev  # Service worker registers in dev mode
+```
+
+**Build and Test**:
+```bash
+pnpm build
+pnpm preview  # Test production build with PWA
+```
+
+**Bypass Service Worker** (for debugging):
+1. Open DevTools → Application → Service Workers
+2. Check "Bypass for network"
+3. Reload page
+
+**Update Service Worker**:
+1. Make code changes
+2. Run `pnpm build`
+3. Service worker auto-updates on next visit
+4. User sees update prompt
+
+### Icon Assets
+
+**Generated Icons**:
+- `icon.svg` - Vector source (scalable)
+- `icon-192x192.png` - Android, Chrome
+- `icon-512x512.png` - Android, Chrome (maskable)
+- `apple-touch-icon.png` - iOS (180x180)
+- `favicon-32x32.png` - Browser tab
+- `favicon-16x16.png` - Browser tab
+
+**Regenerate Icons**:
+```bash
+pnpm tsx scripts/generate-icons.ts
+```
+
+**Requirements**:
+- sharp package (installed as dev dependency)
+- Source SVG in `public/icon.svg`
+- Outputs to `public/` directory
+
+### Production Deployment Considerations
+
+**HTTPS Required**:
+- Service workers require HTTPS (or localhost)
+- Most hosting providers auto-provision SSL
+- HTTP will not register service worker
+
+**Hosting Recommendations**:
+- Vercel, Netlify, GitHub Pages (auto HTTPS)
+- Configure proper cache headers
+- Set long-lived cache for assets (1 year)
+- Set short cache for HTML (revalidate)
+
+**Update Strategy**:
+- New deployments auto-update service worker
+- Users see update prompt on next visit
+- Clicking "Reload" applies update immediately
+- No forced updates (user-controlled)
 
 ## Performance Benchmarks
 

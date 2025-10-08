@@ -36,3 +36,9 @@ coverage/
 # Temporary
 .tmp/
 temp/
+
+# Documentation (generated/reference only)
+PWA-SETUP.md
+
+# MCP directories
+.playwright-mcp/

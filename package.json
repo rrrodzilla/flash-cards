@@ -13,7 +13,8 @@
     "test:ui": "vitest --ui",
     "test:run": "vitest run",
     "test:coverage": "vitest --coverage",
-    "demo": "tsx src/algorithms/demo.ts"
+    "demo": "tsx src/algorithms/demo.ts",
+    "generate-icons": "tsx scripts/generate-icons.ts"
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.7",
@@ -26,7 +27,8 @@
     "react-router-dom": "^6.28.0",
     "recharts": "2.15.4",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "workbox-window": "^7.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
@@ -48,6 +50,7 @@
     "playwright": "^1.56.0",
     "semantic-release": "^24.2.9",
     "shadcn": "^3.4.0",
+    "sharp": "^0.34.4",
     "tailwindcss": "^4.0.0-beta.7",
     "tsx": "^4.20.6",
     "typescript": "^5.7.2",
