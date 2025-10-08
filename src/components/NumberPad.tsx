@@ -132,7 +132,6 @@ export const NumberPad: React.FC<NumberPadProps> = ({
               </span>
             </div>
           ))}
-          <div className="w-1 h-16 bg-blue-600 animate-pulse ml-1" />
         </div>
       </div>
 
