@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/rrrodzilla/flash-cards/compare/v1.3.1...v1.4.0) (2025-10-08)
+
+
+### Features
+
+* add Progressive Web App (PWA) installation support ([55888b1](https://github.com/rrrodzilla/flash-cards/commit/55888b136b4269b62baf6c7f5e9d717f05a27271))
+
 ## [1.3.1](https://github.com/rrrodzilla/flash-cards/compare/v1.3.0...v1.3.1) (2025-10-08)
 
 
