@@ -79,7 +79,8 @@ export function findWeakNumbers(sessions: Session[], limit = 5): number[] {
 
   for (const session of sessions) {
     for (const card of session.cards) {
-      if (!card.isCorrect) {
+      // Only count cards that counted toward score (not shown visualization before answering)
+      if (!card.isCorrect && card.countsTowardScore !== false) {
         const freq1 = frequencies.get(card.operand1) ?? 0;
         frequencies.set(card.operand1, freq1 + 1);
 
@@ -110,7 +111,8 @@ export function findStrongNumbers(sessions: Session[], limit = 5): number[] {
 
   for (const session of sessions) {
     for (const card of session.cards) {
-      if (card.isCorrect) {
+      // Only count cards that counted toward score (not shown visualization before answering)
+      if (card.isCorrect && card.countsTowardScore !== false) {
         const freq1 = frequencies.get(card.operand1) ?? 0;
         frequencies.set(card.operand1, freq1 + 1);
 
@@ -231,7 +233,8 @@ export function findMostMissedProblem(sessions: Session[]): string | null {
 
   for (const session of sessions) {
     for (const card of session.cards) {
-      if (!card.isCorrect) {
+      // Only count cards that counted toward score (not shown visualization before answering)
+      if (!card.isCorrect && card.countsTowardScore !== false) {
         const freq = problemFrequencies.get(card.problem) ?? 0;
         problemFrequencies.set(card.problem, freq + 1);
       }
@@ -271,7 +274,8 @@ export function calculateNumberAccuracy(
 
   for (const session of sessions) {
     for (const card of session.cards) {
-      if (card.operand1 === number || card.operand2 === number) {
+      // Only count cards that counted toward score (not shown visualization before answering)
+      if ((card.operand1 === number || card.operand2 === number) && card.countsTowardScore !== false) {
         total++;
         if (card.isCorrect) {
           correct++;

@@ -59,7 +59,8 @@ export function analyzeWrongAnswers(sessions: Session[]): Map<number, number> {
         continue;
       }
 
-      if (!card.isCorrect) {
+      // Only analyze cards that counted toward score (not shown visualization before answering)
+      if (!card.isCorrect && card.countsTowardScore !== false) {
         if (isValidNumber(card.operand1)) {
           const freq1 = frequencies.get(card.operand1) || 0;
           frequencies.set(card.operand1, freq1 + 1);

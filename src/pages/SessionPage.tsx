@@ -1,14 +1,29 @@
-import { useParams, useNavigate } from 'react-router-dom';
-import { X, Check, AlertTriangle, Star, Eye } from 'lucide-react';
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { getUser, getSettings, createSession, updateSession, getCurrentSession } from '../storage';
-import { generateSessionProblems } from '../algorithms/weightedRandom';
-import type { Card } from '../types';
-import { StorageKeys } from '../types';
-import { NumberPad, Timer, Modal, Button, ConfettiOverlay, SkipLink, SessionPageSkeleton, ArrayVisualization } from '../components';
-import { StarBurst } from '../components/StarBurst';
+import { useParams, useNavigate } from "react-router-dom";
+import { X, Check, AlertTriangle, Star, Eye } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import {
+  getUser,
+  getSettings,
+  createSession,
+  updateSession,
+  getCurrentSession,
+} from "../storage";
+import { generateSessionProblems } from "../algorithms/weightedRandom";
+import type { Card } from "../types";
+import { StorageKeys } from "../types";
+import {
+  NumberPad,
+  Timer,
+  Modal,
+  Button,
+  ConfettiOverlay,
+  SkipLink,
+  SessionPageSkeleton,
+  ArrayVisualization,
+} from "../components";
+import { StarBurst } from "../components/StarBurst";
 
-interface SessionCard extends Omit<Card, 'userAnswer' | 'isCorrect'> {
+interface SessionCard extends Omit<Card, "userAnswer" | "isCorrect"> {
   userAnswer?: number;
   isCorrect?: boolean;
 }
@@ -19,12 +34,14 @@ export default function SessionPage() {
   const [user, setUser] = useState<ReturnType<typeof getUser>>(null);
   const [cards, setCards] = useState<SessionCard[]>([]);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [answer, setAnswer] = useState('0');
+  const [answer, setAnswer] = useState("0");
   const [timeRemaining, setTimeRemaining] = useState(0);
   const [totalTime, setTotalTime] = useState(0);
-  const [sessionId, setSessionId] = useState('');
+  const [sessionId, setSessionId] = useState("");
   const [score, setScore] = useState(0);
-  const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
+  const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(
+    null,
+  );
   const [showExitModal, setShowExitModal] = useState(false);
   const [showStarBurst, setShowStarBurst] = useState(false);
   const [showStreakConfetti, setShowStreakConfetti] = useState(false);
@@ -62,7 +79,7 @@ export default function SessionPage() {
     // Clear current session marker
     localStorage.removeItem(StorageKeys.CURRENT_SESSION);
 
-    navigate('/session-end', {
+    navigate("/session-end", {
       state: {
         timedOut: true,
         score: finalScore,
@@ -74,13 +91,13 @@ export default function SessionPage() {
 
   useEffect(() => {
     if (!userId) {
-      navigate('/users');
+      navigate("/users");
       return;
     }
 
     const loadedUser = getUser(userId);
     if (!loadedUser) {
-      navigate('/users');
+      navigate("/users");
       return;
     }
 
@@ -90,7 +107,10 @@ export default function SessionPage() {
     // This prevents duplicate session creation in React Strict Mode
     const existingSession = getCurrentSession(userId);
 
-    if (existingSession && initializedSessionIdRef.current === existingSession.sessionId) {
+    if (
+      existingSession &&
+      initializedSessionIdRef.current === existingSession.sessionId
+    ) {
       // We've already initialized this session, skip
       return;
     }
@@ -157,13 +177,13 @@ export default function SessionPage() {
   // Keyboard shortcut for "Show Me How" (H key)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if ((e.key === 'h' || e.key === 'H') && feedback === null) {
+      if ((e.key === "h" || e.key === "H") && feedback === null) {
         setShowVisualization((prev) => !prev);
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
   }, [feedback]);
 
   // P1 feature: Check if user has seen tutorial (onboarding)
@@ -176,36 +196,43 @@ export default function SessionPage() {
     }
   }, [userId, currentCardIndex, cards.length]);
 
-  const handleSessionComplete = useCallback((completedCards: Card[]) => {
-    if (timerRef.current !== null) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
+  const handleSessionComplete = useCallback(
+    (completedCards: Card[]) => {
+      if (timerRef.current !== null) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
 
-    const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000);
-    const finalScore = completedCards.filter((c) => c.isCorrect).length;
+      const elapsedTime = Math.floor(
+        (Date.now() - startTimeRef.current) / 1000,
+      );
+      const finalScore = completedCards.filter(
+        (c) => c.isCorrect && c.countsTowardScore !== false,
+      ).length;
 
-    updateSession(sessionId, {
-      cards: completedCards,
-      score: finalScore,
-      totalCards: cards.length,
-      finishTime: elapsedTime,
-      timedOut: false,
-    });
-
-    // Clear current session marker
-    localStorage.removeItem(StorageKeys.CURRENT_SESSION);
-
-    navigate('/session-end', {
-      state: {
-        timedOut: false,
+      updateSession(sessionId, {
+        cards: completedCards,
         score: finalScore,
         totalCards: cards.length,
         finishTime: elapsedTime,
-        userId,
-      },
-    });
-  }, [sessionId, cards.length, userId, navigate]);
+        timedOut: false,
+      });
+
+      // Clear current session marker
+      localStorage.removeItem(StorageKeys.CURRENT_SESSION);
+
+      navigate("/session-end", {
+        state: {
+          timedOut: false,
+          score: finalScore,
+          totalCards: cards.length,
+          finishTime: elapsedTime,
+          userId,
+        },
+      });
+    },
+    [sessionId, cards.length, userId, navigate],
+  );
 
   const handleSubmitAnswer = useCallback(() => {
     if (feedback !== null) return;
@@ -221,15 +248,16 @@ export default function SessionPage() {
       userAnswer,
       isCorrect,
       visualizationShown: showVisualization,
+      countsTowardScore: !showVisualization, // Don't count if user viewed explanation
     };
 
     const updatedCards = [...cards];
     updatedCards[currentCardIndex] = updatedCard;
     setCards(updatedCards);
 
-    if (isCorrect) {
+    if (isCorrect && !showVisualization) {
       setScore((prev) => prev + 1);
-      setFeedback('correct');
+      setFeedback("correct");
       setShowStarBurst(true);
 
       setStreak((prev) => {
@@ -243,7 +271,7 @@ export default function SessionPage() {
       const newProgress = ((currentCardIndex + 1) / cards.length) * 100;
       const milestones = [25, 50, 75, 100];
       const reachedMilestone = milestones.find(
-        (m) => newProgress >= m && ((currentCardIndex / cards.length) * 100) < m
+        (m) => newProgress >= m && (currentCardIndex / cards.length) * 100 < m,
       );
 
       if (reachedMilestone) {
@@ -251,7 +279,7 @@ export default function SessionPage() {
         setTimeout(() => setMilestoneReached(null), 1000);
       }
     } else {
-      setFeedback('incorrect');
+      setFeedback("incorrect");
       setStreak(0);
       setWaitingForContinue(true);
     }
@@ -260,7 +288,7 @@ export default function SessionPage() {
     if (isCorrect) {
       setTimeout(() => {
         setFeedback(null);
-        setAnswer('0');
+        setAnswer("0");
         setShowVisualization(false);
 
         if (currentCardIndex + 1 >= cards.length) {
@@ -270,7 +298,14 @@ export default function SessionPage() {
         }
       }, 1500);
     }
-  }, [answer, currentCardIndex, cards, feedback, handleSessionComplete, showVisualization]);
+  }, [
+    answer,
+    currentCardIndex,
+    cards,
+    feedback,
+    handleSessionComplete,
+    showVisualization,
+  ]);
 
   const handleExit = () => {
     setShowExitModal(true);
@@ -279,7 +314,7 @@ export default function SessionPage() {
   const handleContinueAfterIncorrect = () => {
     setWaitingForContinue(false);
     setFeedback(null);
-    setAnswer('0');
+    setAnswer("0");
     setShowVisualization(false);
 
     if (currentCardIndex + 1 >= cards.length) {
@@ -310,11 +345,12 @@ export default function SessionPage() {
     // Clear current session marker
     localStorage.removeItem(StorageKeys.CURRENT_SESSION);
 
-    navigate('/users');
+    navigate("/users");
   };
 
   const currentCard = cards[currentCardIndex];
-  const progress = cards.length > 0 ? ((currentCardIndex + 1) / cards.length) * 100 : 0;
+  const progress =
+    cards.length > 0 ? ((currentCardIndex + 1) / cards.length) * 100 : 0;
   const milestones = [25, 50, 75, 100];
 
   if (!user || !currentCard) {
@@ -359,7 +395,7 @@ export default function SessionPage() {
           <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
             <div
               className={`h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 ease-out ${
-                milestoneReached ? 'animate-milestonePulse' : ''
+                milestoneReached ? "animate-milestonePulse" : ""
               }`}
               style={{ width: `${progress}%` }}
               role="progressbar"
@@ -384,12 +420,14 @@ export default function SessionPage() {
                   size={20}
                   className={`transform -translate-x-1/2 transition-all duration-300 ${
                     isPassed
-                      ? 'text-yellow-500 fill-yellow-500 scale-110'
-                      : 'text-gray-400'
+                      ? "text-yellow-500 fill-yellow-500 scale-110"
+                      : "text-gray-400"
                   } ${
-                    milestoneReached === milestone ? 'animate-milestonePulse' : ''
+                    milestoneReached === milestone
+                      ? "animate-milestonePulse"
+                      : ""
                   }`}
-                  aria-label={`${milestone}% milestone ${isPassed ? 'reached' : 'not reached'}`}
+                  aria-label={`${milestone}% milestone ${isPassed ? "reached" : "not reached"}`}
                 />
               </div>
             );
@@ -397,7 +435,11 @@ export default function SessionPage() {
         </div>
       </header>
 
-      <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col items-center justify-center p-4">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 flex flex-col items-center justify-center p-4"
+      >
         <div className="w-full max-w-2xl mx-auto space-y-8">
           <div className="mb-8" aria-live="polite" aria-atomic="true">
             <Timer
@@ -410,11 +452,11 @@ export default function SessionPage() {
 
           <div
             className={`bg-white rounded-3xl shadow-2xl p-8 border-4 transition-all duration-300 relative ${
-              feedback === 'correct'
-                ? 'border-green-500 bg-green-50 animate-cardPulse'
-                : feedback === 'incorrect'
-                ? 'border-red-500 bg-red-50 animate-shake'
-                : 'border-blue-200'
+              feedback === "correct"
+                ? "border-green-500 bg-green-50 animate-cardPulse"
+                : feedback === "incorrect"
+                  ? "border-red-500 bg-red-50 animate-shake"
+                  : "border-blue-200"
             }`}
           >
             {showStarBurst && (
@@ -426,8 +468,10 @@ export default function SessionPage() {
               />
             )}
             <div className="text-center mb-8">
-              <p className="text-gray-600 text-xl mb-4 font-semibold">What is</p>
-              <div className="text-8xl font-black text-gray-900 mb-4 tabular-nums">
+              <p className="text-gray-600 text-xl mb-0 font-semibold">
+                What is
+              </p>
+              <div className="text-8xl font-black text-gray-900 mb-0 tabular-nums">
                 {currentCard.problem}
               </div>
               <p className="text-gray-600 text-xl font-semibold">?</p>
@@ -443,7 +487,7 @@ export default function SessionPage() {
                 aria-expanded={showVisualization}
               >
                 <Eye size={20} />
-                {showVisualization ? 'Hide Explanation' : 'Show Me How'}
+                {showVisualization ? "Hide Explanation" : "Show Me How"}
               </button>
             </div>
 
@@ -461,7 +505,7 @@ export default function SessionPage() {
 
             {feedback && (
               <div className="mb-6 space-y-4">
-                {feedback === 'correct' ? (
+                {feedback === "correct" ? (
                   <div
                     className="p-4 rounded-2xl flex items-center justify-center gap-3 font-bold text-xl bg-green-100 text-green-700"
                     role="alert"
@@ -469,7 +513,9 @@ export default function SessionPage() {
                     aria-atomic="true"
                   >
                     <Check size={28} />
-                    <span>Correct! {streak >= 3 && `🔥 ${streak} in a row!`}</span>
+                    <span>
+                      Correct! {streak >= 3 && `🔥 ${streak} in a row!`}
+                    </span>
                   </div>
                 ) : (
                   <>
@@ -480,7 +526,9 @@ export default function SessionPage() {
                       aria-atomic="true"
                     >
                       <X size={28} />
-                      <span>Incorrect! Answer: {currentCard.correctAnswer}</span>
+                      <span>
+                        Incorrect! Answer: {currentCard.correctAnswer}
+                      </span>
                     </div>
 
                     {/* Enhanced P1 feature: Show compact visualization on incorrect answer */}
@@ -539,11 +587,15 @@ export default function SessionPage() {
       >
         <div className="space-y-4">
           <div className="flex items-start gap-3 p-4 bg-yellow-50 rounded-xl border-2 border-yellow-200">
-            <AlertTriangle size={24} className="text-yellow-600 flex-shrink-0 mt-1" />
+            <AlertTriangle
+              size={24}
+              className="text-yellow-600 flex-shrink-0 mt-1"
+            />
             <div>
               <p className="font-bold text-yellow-900 mb-2">Are you sure?</p>
               <p className="text-yellow-700">
-                Your progress will be saved, but the session will be marked as incomplete.
+                Your progress will be saved, but the session will be marked as
+                incomplete.
               </p>
             </div>
           </div>
@@ -567,18 +619,22 @@ export default function SessionPage() {
       <Modal
         isOpen={showOnboarding}
         onClose={() => {
-          localStorage.setItem(`tutorial_seen_${userId}`, 'true');
+          localStorage.setItem(`tutorial_seen_${userId}`, "true");
           setShowOnboarding(false);
         }}
         title="💡 Helpful Tip!"
       >
         <div className="space-y-4">
           <p className="text-lg text-gray-700">
-            If you're stuck on a problem, tap <strong className="text-purple-600">"Show Me How"</strong> to see a visual explanation!
+            If you're stuck on a problem, tap{" "}
+            <strong className="text-purple-600">"Show Me How"</strong> to see a
+            visual explanation!
           </p>
 
           <div className="bg-gray-50 p-4 rounded-xl">
-            <p className="text-sm text-gray-600 mb-3">Here's an example for 3 × 4:</p>
+            <p className="text-sm text-gray-600 mb-3">
+              Here's an example for 3 × 4:
+            </p>
             <ArrayVisualization
               operand1={3}
               operand2={4}
@@ -589,7 +645,7 @@ export default function SessionPage() {
 
           <Button
             onClick={() => {
-              localStorage.setItem(`tutorial_seen_${userId}`, 'true');
+              localStorage.setItem(`tutorial_seen_${userId}`, "true");
               setShowOnboarding(false);
             }}
             variant="primary"

@@ -117,7 +117,7 @@ export function useSession({
       };
 
       const updatedCards = [...session.cards, completedCard];
-      const updatedScore = updatedCards.filter((c) => c.isCorrect).length;
+      const updatedScore = updatedCards.filter((c) => c.isCorrect && c.countsTowardScore !== false).length;
 
       const updatedSession = updateSession(session.sessionId, {
         cards: updatedCards,

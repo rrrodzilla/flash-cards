@@ -22,6 +22,7 @@ export interface Card {
   correctAnswer: number;
   isCorrect: boolean;
   visualizationShown?: boolean;
+  countsTowardScore?: boolean; // false if user viewed visualization before answering
 }
 
 export interface Session {
