@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from 'react';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 /**
  * Timer component props interface
@@ -79,12 +82,6 @@ export const Timer: React.FC<TimerProps> = ({
     return 'green';
   };
 
-  const colorClasses = {
-    green: 'bg-green-500',
-    yellow: 'bg-yellow-500',
-    red: 'bg-red-500',
-  };
-
   const textColorClasses = {
     green: 'text-green-600',
     yellow: 'text-yellow-600',
@@ -157,15 +154,23 @@ export const Timer: React.FC<TimerProps> = ({
           )}
         </div>
         {isPaused && (
-          <span className="mt-2 text-sm font-semibold text-gray-500">Paused</span>
+          <Badge variant="secondary" className="mt-2 text-sm">
+            Paused
+          </Badge>
         )}
       </div>
     );
   }
 
+  const progressBarColors = {
+    green: 'bg-green-500',
+    yellow: 'bg-yellow-500',
+    red: 'bg-red-500',
+  };
+
   return (
     <div
-      className={`w-full ${pulseWarning ? 'animate-pulse' : ''}`}
+      className={cn('w-full', pulseWarning && 'animate-pulse')}
       role="timer"
       aria-live="polite"
       aria-atomic="true"
@@ -173,27 +178,28 @@ export const Timer: React.FC<TimerProps> = ({
     >
       {showNumbers && (
         <div className="flex items-center justify-between mb-2">
-          <span className={`font-bold ${sizeStyles[size]} ${textColorClasses[getColor()]} tabular-nums`}>
+          <span className={cn('font-bold tabular-nums', sizeStyles[size], textColorClasses[getColor()])}>
             {minutes}:{seconds.toString().padStart(2, '0')}
           </span>
           {isPaused && (
-            <span className="text-sm font-semibold text-gray-500">Paused</span>
+            <Badge variant="secondary" className="text-sm">
+              Paused
+            </Badge>
           )}
         </div>
       )}
-      <div className="w-full h-6 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-        <div
-          className={`h-full transition-all duration-1000 ease-linear ${
-            colorClasses[getColor()]
-          } shadow-lg`}
-          style={{ width: `${percentage}%` }}
-          role="progressbar"
-          aria-valuenow={remainingSeconds}
-          aria-valuemin={0}
-          aria-valuemax={totalSeconds}
-          aria-label={`${remainingSeconds} seconds remaining`}
-        />
-      </div>
+      <Progress
+        value={percentage}
+        className="h-6 bg-gray-200 shadow-inner"
+        aria-valuenow={remainingSeconds}
+        aria-valuemin={0}
+        aria-valuemax={totalSeconds}
+        aria-label={`${remainingSeconds} seconds remaining`}
+        indicatorClassName={cn(
+          'transition-all duration-1000 ease-linear shadow-lg',
+          progressBarColors[getColor()]
+        )}
+      />
     </div>
   );
 };
