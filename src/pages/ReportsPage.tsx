@@ -288,7 +288,6 @@ export default function ReportsPage() {
                 color="text-yellow-600"
                 bgColor="bg-white"
                 borderColor="border-yellow-200"
-                progress={stats.bestScore}
                 subtext="Keep it up!"
               />
 
