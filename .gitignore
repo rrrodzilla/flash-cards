@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-pnpm-lock.yaml
+# pnpm-lock.yaml (needed for CI caching)
 
 # Build outputs
 dist/
