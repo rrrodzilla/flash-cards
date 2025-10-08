@@ -58,10 +58,9 @@ jobs:
 
       - name: Trigger deployment webhook
         run: |
-          curl -X POST ${{ secrets.DEPLOY_WEBHOOK_URL }} \
+          curl -X POST https://webhook.govcraft.ai/flashcards \
             -H "Content-Type: application/json" \
             -H "X-GitHub-Event: release" \
-            -H "X-Hub-Signature-256: ${{ secrets.WEBHOOK_SECRET }}" \
             -d '{
               "action": "published",
               "release": {
