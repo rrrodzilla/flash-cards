@@ -30,3 +30,13 @@ export {
   UserCardSkeleton,
 } from './Skeleton';
 export { ArrayVisualization, type ArrayVisualizationProps } from './ArrayVisualization';
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from './ui/table';
