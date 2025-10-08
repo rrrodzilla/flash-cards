@@ -330,6 +330,10 @@ export default function SettingsPage() {
             Clear All Data
           </Button>
         </div>
+
+        <div className="mt-6 text-center text-sm text-gray-500">
+          Version {__APP_VERSION__}
+        </div>
       </main>
 
       <Modal

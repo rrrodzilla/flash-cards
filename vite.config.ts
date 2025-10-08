@@ -3,8 +3,16 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+
+// Read version from package.json
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8')) as { version: string };
+const appVersion: string = packageJson.version;
 
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   test: {
     globals: true,
     environment: 'happy-dom',
