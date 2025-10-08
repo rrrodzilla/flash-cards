@@ -3,6 +3,12 @@ name: Deploy
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to deploy'
+        required: true
+        type: string
 
 jobs:
   deploy:
@@ -29,18 +35,27 @@ jobs:
       - name: Build production bundle
         run: pnpm build
 
+      - name: Set tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+          fi
+
       - name: Create deployment archive
         run: |
           cd dist
-          tar -czf ../flashcards-${{ github.event.release.tag_name }}.tar.gz .
+          tar -czf ../flashcards-${{ steps.tag.outputs.tag }}.tar.gz .
           cd ..
 
       - name: Upload release asset
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release upload ${{ github.event.release.tag_name }} \
-            flashcards-${{ github.event.release.tag_name }}.tar.gz \
+          gh release upload ${{ steps.tag.outputs.tag }} \
+            flashcards-${{ steps.tag.outputs.tag }}.tar.gz \
             --clobber
 
       - name: Trigger deployment webhook
@@ -48,18 +63,19 @@ jobs:
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
-          PAYLOAD='{
-            "action": "published",
-            "release": {
-              "tag_name": "${{ github.event.release.tag_name }}",
-              "name": "${{ github.event.release.name }}",
-              "html_url": "${{ github.event.release.html_url }}"
+          TAG="${{ steps.tag.outputs.tag }}"
+          PAYLOAD="{
+            \"action\": \"published\",
+            \"release\": {
+              \"tag_name\": \"${TAG}\",
+              \"name\": \"Flash Cards ${TAG}\",
+              \"html_url\": \"https://github.com/${{ github.repository }}/releases/tag/${TAG}\"
             },
-            "repository": {
-              "full_name": "${{ github.repository }}",
-              "clone_url": "https://github.com/${{ github.repository }}.git"
+            \"repository\": {
+              \"full_name\": \"${{ github.repository }}\",
+              \"clone_url\": \"https://github.com/${{ github.repository }}.git\"
             }
-          }'
+          }"
           SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | sed 's/^.* //')"
           curl -X POST "$WEBHOOK_URL" \
             -H "Content-Type: application/json" \
