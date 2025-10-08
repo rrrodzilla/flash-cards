@@ -30,6 +30,7 @@ export {
   UserCardSkeleton,
 } from './Skeleton';
 export { ArrayVisualization, type ArrayVisualizationProps } from './ArrayVisualization';
+export { SessionCard, type SessionCardProps } from './SessionCard';
 export {
   Table,
   TableHeader,

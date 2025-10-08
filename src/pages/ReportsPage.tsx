@@ -18,6 +18,7 @@ import {
   AchievementBadge,
   SkipLink,
   ReportsPageSkeleton,
+  SessionCard,
   Table,
   TableHeader,
   TableBody,
@@ -453,97 +454,108 @@ export default function ReportsPage() {
 
             <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Session History 📚</h2>
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-b-2 border-gray-200">
-                    <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
-                      Date
-                    </TableHead>
-                    <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
-                      Score
-                    </TableHead>
-                    <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
-                      Cards
-                    </TableHead>
-                    <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
-                      Time
-                    </TableHead>
-                    <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
-                      Progress
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sessions.map((session, index) => {
-                    const percentage =
-                      session.totalCards > 0
-                        ? Math.round((session.score / session.totalCards) * 100)
-                        : 0;
 
-                    const prevSession = sessions[index + 1];
-                    const prevPercentage = prevSession && prevSession.totalCards > 0
-                      ? Math.round((prevSession.score / prevSession.totalCards) * 100)
-                      : null;
+              {/* Mobile: Card Layout */}
+              <div className="block md:hidden space-y-4">
+                {sessions.map((session) => (
+                  <SessionCard key={session.sessionId} session={session} />
+                ))}
+              </div>
 
-                    const improvement = prevPercentage !== null ? percentage - prevPercentage : null;
+              {/* Desktop: Table Layout */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b-2 border-gray-200">
+                      <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
+                        Date
+                      </TableHead>
+                      <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
+                        Score
+                      </TableHead>
+                      <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
+                        Cards
+                      </TableHead>
+                      <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
+                        Time
+                      </TableHead>
+                      <TableHead className="text-left py-3 px-4 font-bold text-gray-700">
+                        Progress
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sessions.map((session, index) => {
+                      const percentage =
+                        session.totalCards > 0
+                          ? Math.round((session.score / session.totalCards) * 100)
+                          : 0;
 
-                    return (
-                      <TableRow
-                        key={session.sessionId}
-                        className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                      >
-                        <TableCell className="py-3 px-4 text-gray-900 font-semibold">
-                          {formatRelativeDate(session.timestamp)}
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          <span
-                            className={`font-bold ${
-                              percentage >= 90
-                                ? 'text-green-600'
-                                : percentage >= 75
-                                ? 'text-blue-600'
-                                : percentage >= 60
-                                ? 'text-yellow-600'
-                                : 'text-orange-600'
-                            }`}
-                          >
-                            {session.score}/{session.totalCards}
-                          </span>
-                          <span className="text-gray-500 ml-2">({percentage}%)</span>
-                        </TableCell>
-                        <TableCell className="py-3 px-4 text-gray-900 font-semibold">
-                          {session.totalCards}
-                        </TableCell>
-                        <TableCell className="py-3 px-4 text-gray-900 font-semibold">
-                          {session.finishTime
-                            ? formatTime(session.finishTime)
-                            : session.timedOut
-                            ? 'Timeout'
-                            : '-'}
-                        </TableCell>
-                        <TableCell className="py-3 px-4">
-                          {session.timedOut ? (
-                            <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-semibold">
-                              Still Practicing
+                      const prevSession = sessions[index + 1];
+                      const prevPercentage = prevSession && prevSession.totalCards > 0
+                        ? Math.round((prevSession.score / prevSession.totalCards) * 100)
+                        : null;
+
+                      const improvement = prevPercentage !== null ? percentage - prevPercentage : null;
+
+                      return (
+                        <TableRow
+                          key={session.sessionId}
+                          className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                        >
+                          <TableCell className="py-3 px-4 text-gray-900 font-semibold">
+                            {formatRelativeDate(session.timestamp)}
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            <span
+                              className={`font-bold ${
+                                percentage >= 90
+                                  ? 'text-green-600'
+                                  : percentage >= 75
+                                  ? 'text-blue-600'
+                                  : percentage >= 60
+                                  ? 'text-yellow-600'
+                                  : 'text-orange-600'
+                              }`}
+                            >
+                              {session.score}/{session.totalCards}
                             </span>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
-                                Complete
+                            <span className="text-gray-500 ml-2">({percentage}%)</span>
+                          </TableCell>
+                          <TableCell className="py-3 px-4 text-gray-900 font-semibold">
+                            {session.totalCards}
+                          </TableCell>
+                          <TableCell className="py-3 px-4 text-gray-900 font-semibold">
+                            {session.finishTime
+                              ? formatTime(session.finishTime)
+                              : session.timedOut
+                              ? 'Timeout'
+                              : '-'}
+                          </TableCell>
+                          <TableCell className="py-3 px-4">
+                            {session.timedOut ? (
+                              <span className="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm font-semibold">
+                                Still Practicing
                               </span>
-                              {improvement !== null && improvement > 0 && (
-                                <span className="text-green-600 font-bold text-sm flex items-center">
-                                  ↑ {improvement}%
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                                  Complete
                                 </span>
-                              )}
-                            </div>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                                {improvement !== null && improvement > 0 && (
+                                  <span className="text-green-600 font-bold text-sm flex items-center">
+                                    ↑ {improvement}%
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             </div>
           </>
         )}
