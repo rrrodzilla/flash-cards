@@ -132,17 +132,19 @@ export default function UsersPage() {
       </header>
 
       <main id="main-content" tabIndex={-1} className="p-4 max-w-4xl mx-auto">
-        <div className="mb-6">
-          <Button
-            onClick={() => setIsAddModalOpen(true)}
-            variant="primary"
-            fullWidth
-            size="large"
-          >
-            <UserPlus size={24} className="inline mr-2" />
-            Add New User
-          </Button>
-        </div>
+        {users.length > 0 && (
+          <div className="mb-6">
+            <Button
+              onClick={() => setIsAddModalOpen(true)}
+              variant="primary"
+              fullWidth
+              size="large"
+            >
+              <UserPlus size={24} className="inline mr-2" />
+              Add New User
+            </Button>
+          </div>
+        )}
 
         {initialLoading ? (
           <div className="grid gap-4 md:grid-cols-2">
