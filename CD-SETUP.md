@@ -28,34 +28,47 @@ GitHub Release (tag) → GitHub Actions → Build & Test → Upload Asset → We
 - Automatic rollback on failure
 - Logs: `/var/log/flashcards-deployments.log`
 
-### 3. Webhook Receiver (`github-webhook.service` on penny-pi)
+### 3. Webhook Receiver (`webhook.service` on penny-pi)
+- Uses `adnanh/webhook` (https://github.com/adnanh/webhook)
 - Systemd service listening on port 9000
-- Receives GitHub webhook events
-- Triggers deployment script
-- Logs: `/var/log/github-webhook.log`
-- Service status: `systemctl status github-webhook`
+- Validates HMAC-SHA256 signatures
+- Triggers deployment script on valid release events
+- Logs: `journalctl -u webhook -f`
+- Service status: `systemctl status webhook`
+- Config: `/etc/webhook.conf`
 
 ### 4. Traefik Routing
-- Public webhook endpoint: `https://webhook.govcraft.ai/flashcards`
+- Public webhook endpoint: `https://wh-pp7c9a4b2f.govcraft.ai/hooks/flashcards-deploy`
 - Routes to localhost:9000
 - TLS termination with Let's Encrypt
+- Full path forwarding (no prefix stripping)
 
 ## Public Webhook Endpoint
 
 The webhook endpoint is publicly accessible at:
 ```
-https://webhook.govcraft.ai/flashcards
+https://wh-pp7c9a4b2f.govcraft.ai/hooks/flashcards-deploy
 ```
 
 This endpoint:
-- Is routed through Traefik on penny-pi
+- Uses opaque subdomain for security (wh-pp7c9a4b2f)
+- `pp` prefix identifies penny-pi for operational convenience
+- Routed through Traefik on penny-pi
 - Uses Let's Encrypt TLS certificate
 - Forwards to the webhook receiver service (localhost:9000)
 - No GitHub secrets required (webhook URL is hardcoded in workflow)
 
-### DNS Configuration Required
+### Security Design
 
-Ensure `webhook.govcraft.ai` DNS record points to penny-pi's public IP.
+The webhook domain uses a hybrid approach:
+- **Opaque identifier**: `7c9a4b2f` provides security through obscurity
+- **Server hint**: `pp` prefix allows at-a-glance server identification
+- **Service prefix**: `wh-` indicates webhook service
+- Other servers use different prefixes (e.g., `wh-os3e8d1a6c` for other-server)
+
+### DNS Configuration
+
+A record: `wh-pp7c9a4b2f.govcraft.ai` → `31.97.11.131` (penny-pi public IP)
 
 ## Testing the Pipeline
 
@@ -150,12 +163,12 @@ ssh root@penny-pi "
 
 ### View webhook receiver logs:
 ```bash
-ssh root@penny-pi "journalctl -u github-webhook -f"
+ssh root@penny-pi "journalctl -u webhook -f"
 ```
 
 ### Restart webhook service:
 ```bash
-ssh root@penny-pi "systemctl restart github-webhook"
+ssh root@penny-pi "systemctl restart webhook"
 ```
 
 ### Test deployment script manually:
@@ -169,27 +182,34 @@ Automatic - runs on each deployment
 ### Update webhook secret:
 ```bash
 # Generate new secret
-ssh root@penny-pi "openssl rand -hex 32 | tee /etc/github-webhook-secret"
+NEW_SECRET=$(openssl rand -hex 32)
+echo $NEW_SECRET
 
-# Update GitHub repository secret WEBHOOK_SECRET
+# Update webhook config on penny-pi
+ssh root@penny-pi "sed -i 's/\"secret\": \".*\"/\"secret\": \"$NEW_SECRET\"/' /etc/webhook.conf"
+
+# Update workflow file locally
+# Edit .github/workflows/release.yml and change WEBHOOK_SECRET value
+
 # Restart webhook service
-ssh root@penny-pi "systemctl restart github-webhook"
+ssh root@penny-pi "systemctl restart webhook"
 ```
 
 ## Troubleshooting
 
 ### Deployment failed
-- Check logs: `/var/log/github-webhook.log`
-- Check deployment log: `/var/log/flashcards-deployments.log`
+- Check webhook logs: `ssh root@penny-pi "journalctl -u webhook -n 50"`
+- Check deployment log: `ssh root@penny-pi "cat /var/log/flashcards-deployments.log"`
 - Verify release asset exists on GitHub
 - Check network connectivity from penny-pi to GitHub
 - Verify container is running: `incus list --project flashcards`
 
 ### Webhook not triggered
-- Verify GitHub secrets are set correctly
-- Check Traefik logs: `journalctl -u traefik -f`
-- Test webhook endpoint: `curl -I https://penny-pi.tail93cb7e.ts.net/webhook/flashcards`
-- Check webhook service: `systemctl status github-webhook`
+- Check webhook service: `ssh root@penny-pi "systemctl status webhook"`
+- View webhook logs: `ssh root@penny-pi "journalctl -u webhook -f"`
+- Test endpoint: `curl -I https://wh-pp7c9a4b2f.govcraft.ai/hooks/flashcards-deploy`
+- Verify Traefik config: `ssh root@penny-pi "cat /etc/traefik/dynamic/webhook.yml"`
+- Check webhook config: `ssh root@penny-pi "cat /etc/webhook.conf"`
 
 ### Build failed in GitHub Actions
 - Check workflow run in GitHub Actions tab
@@ -197,13 +217,25 @@ ssh root@penny-pi "systemctl restart github-webhook"
 - Verify type-check: `pnpm type-check`
 - Verify lint: `pnpm lint`
 
+## Required GitHub Repository Secrets
+
+Configure in repository: `Settings → Secrets and variables → Actions → New repository secret`
+
+**WEBHOOK_SECRET**
+- Get value from penny-pi: `ssh root@penny-pi "grep secret /etc/webhook.conf | grep -oP '\"secret\":\s*\"\K[^\"]+'"`
+- Used for HMAC-SHA256 webhook signature validation
+- Prevents unauthorized deployment triggers
+
 ## Security Notes
 
-- Webhook secret stored in `/etc/github-webhook-secret` (600 permissions, root only)
+- Webhook secret stored in `/etc/webhook.conf` on penny-pi (access via SSH)
+- HMAC-SHA256 signature validation on all webhook requests
 - Deployment runs as root (required for Incus container management)
 - Backups stored in `/var/backups/flashcards/` (retention: 5 most recent)
 - GitHub Actions uses `GITHUB_TOKEN` (automatic, scoped to repository)
 - TLS required for webhook endpoint (Let's Encrypt cert)
+- Opaque subdomain prevents infrastructure enumeration
+- **Never commit secrets to repository** (use GitHub Secrets)
 
 ## Files Reference
 
@@ -212,13 +244,13 @@ ssh root@penny-pi "systemctl restart github-webhook"
 
 ### penny-pi Server
 - `/usr/local/bin/deploy-flashcards.sh` - Deployment script
-- `/usr/local/bin/github-webhook-receiver.sh` - Webhook receiver script
-- `/etc/systemd/system/github-webhook.service` - Systemd service
-- `/etc/github-webhook-secret` - Webhook secret (600, root)
+- `/usr/bin/webhook` - Webhook server binary (adnanh/webhook)
+- `/etc/webhook.conf` - Webhook configuration (JSON)
+- `/etc/systemd/system/webhook.service` - Systemd service
 - `/etc/traefik/dynamic/webhook.yml` - Traefik routing config
-- `/var/log/github-webhook.log` - Webhook receiver logs
 - `/var/log/flashcards-deployments.log` - Deployment history
 - `/var/backups/flashcards/` - Deployment backups
+- Logs: `journalctl -u webhook`
 
 ### Incus Container (flashcards-app)
 - `/var/www/flashcards/` - Application files

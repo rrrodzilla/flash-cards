@@ -57,19 +57,24 @@ jobs:
           asset_content_type: application/gzip
 
       - name: Trigger deployment webhook
+        env:
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
         run: |
-          curl -X POST https://webhook.govcraft.ai/flashcards \
+          PAYLOAD='{
+            "action": "published",
+            "release": {
+              "tag_name": "${{ github.event.release.tag_name }}",
+              "name": "${{ github.event.release.name }}",
+              "html_url": "${{ github.event.release.html_url }}"
+            },
+            "repository": {
+              "full_name": "${{ github.repository }}",
+              "clone_url": "${{ github.event.repository.clone_url }}"
+            }
+          }'
+          SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$WEBHOOK_SECRET" | sed 's/^.* //')"
+          curl -X POST https://wh-pp7c9a4b2f.govcraft.ai/hooks/flashcards-deploy \
             -H "Content-Type: application/json" \
             -H "X-GitHub-Event: release" \
-            -d '{
-              "action": "published",
-              "release": {
-                "tag_name": "${{ github.event.release.tag_name }}",
-                "name": "${{ github.event.release.name }}",
-                "html_url": "${{ github.event.release.html_url }}"
-              },
-              "repository": {
-                "full_name": "${{ github.repository }}",
-                "clone_url": "${{ github.event.repository.clone_url }}"
-              }
-            }'
+            -H "X-Hub-Signature-256: $SIGNATURE" \
+            -d "$PAYLOAD"
