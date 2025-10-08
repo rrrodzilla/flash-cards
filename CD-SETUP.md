@@ -38,37 +38,26 @@ GitHub Release (tag) → GitHub Actions → Build & Test → Upload Asset → We
 - Config: `/etc/webhook.conf`
 
 ### 4. Traefik Routing
-- Public webhook endpoint: `https://wh-pp7c9a4b2f.govcraft.ai/hooks/flashcards-deploy`
-- Routes to localhost:9000
+- Public webhook endpoint configured with opaque subdomain
+- Routes to localhost:9000 on penny-pi
 - TLS termination with Let's Encrypt
 - Full path forwarding (no prefix stripping)
 
-## Public Webhook Endpoint
+## Webhook Endpoint Design
 
-The webhook endpoint is publicly accessible at:
-```
-https://wh-pp7c9a4b2f.govcraft.ai/hooks/flashcards-deploy
-```
-
-This endpoint:
-- Uses opaque subdomain for security (wh-pp7c9a4b2f)
-- `pp` prefix identifies penny-pi for operational convenience
-- Routed through Traefik on penny-pi
-- Uses Let's Encrypt TLS certificate
-- Forwards to the webhook receiver service (localhost:9000)
-- No GitHub secrets required (webhook URL is hardcoded in workflow)
-
-### Security Design
-
-The webhook domain uses a hybrid approach:
-- **Opaque identifier**: `7c9a4b2f` provides security through obscurity
-- **Server hint**: `pp` prefix allows at-a-glance server identification
-- **Service prefix**: `wh-` indicates webhook service
-- Other servers use different prefixes (e.g., `wh-os3e8d1a6c` for other-server)
+The webhook endpoint uses security best practices:
+- **Opaque subdomain**: Prevents infrastructure enumeration
+- **HMAC-SHA256 signing**: Validates all requests
+- **TLS encryption**: End-to-end encrypted
+- **No public disclosure**: Endpoint URL stored as GitHub secret
 
 ### DNS Configuration
 
-A record: `wh-pp7c9a4b2f.govcraft.ai` → `31.97.11.131` (penny-pi public IP)
+The webhook domain uses a hybrid approach:
+- **Opaque identifier**: Random hex provides security through obscurity
+- **Server hint**: 2-letter prefix for operational identification (private)
+- **Service prefix**: `wh-` indicates webhook service
+- DNS A record points to penny-pi public IP (not disclosed in docs)
 
 ## Testing the Pipeline
 
@@ -207,7 +196,8 @@ ssh root@penny-pi "systemctl restart webhook"
 ### Webhook not triggered
 - Check webhook service: `ssh root@penny-pi "systemctl status webhook"`
 - View webhook logs: `ssh root@penny-pi "journalctl -u webhook -f"`
-- Test endpoint: `curl -I https://wh-pp7c9a4b2f.govcraft.ai/hooks/flashcards-deploy`
+- Verify GitHub secrets are set (WEBHOOK_URL and WEBHOOK_SECRET)
+- Check GitHub Actions workflow output for curl errors
 - Verify Traefik config: `ssh root@penny-pi "cat /etc/traefik/dynamic/webhook.yml"`
 - Check webhook config: `ssh root@penny-pi "cat /etc/webhook.conf"`
 
@@ -220,6 +210,12 @@ ssh root@penny-pi "systemctl restart webhook"
 ## Required GitHub Repository Secrets
 
 Configure in repository: `Settings → Secrets and variables → Actions → New repository secret`
+
+**WEBHOOK_URL**
+- The full HTTPS URL to the webhook endpoint on penny-pi
+- Format: `https://{opaque-subdomain}.govcraft.ai/hooks/flashcards-deploy`
+- Stored as secret to prevent endpoint enumeration
+- Get value: Contact server administrator or check penny-pi Traefik config
 
 **WEBHOOK_SECRET**
 - Get value from penny-pi: `ssh root@penny-pi "grep secret /etc/webhook.conf | grep -oP '\"secret\":\s*\"\K[^\"]+'"`
