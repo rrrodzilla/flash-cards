@@ -165,7 +165,7 @@ export default function UsersPage() {
               onClick={() => setIsAddModalOpen(true)}
               variant="primary"
               size="large"
-              className="animate-bounce"
+              className="animate-bounce-slow"
             >
               <UserPlus size={24} className="inline mr-2" />
               Create First Player
