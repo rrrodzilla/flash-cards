@@ -1,3 +1,15 @@
+# [1.5.0](https://github.com/rrrodzilla/flash-cards/compare/v1.4.0...v1.5.0) (2025-10-08)
+
+
+### Bug Fixes
+
+* **ui:** slow down "Create First Player" button bounce animation ([1f7210d](https://github.com/rrrodzilla/flash-cards/commit/1f7210d31e152f7a1cc751c6a70b9fc50ecd8f3d))
+
+
+### Features
+
+* **ui:** improve celebration animation timing and visual hierarchy ([d65ca45](https://github.com/rrrodzilla/flash-cards/commit/d65ca4568e4472e2240721e8330e343cc5046eb4))
+
 # [1.4.0](https://github.com/rrrodzilla/flash-cards/compare/v1.3.1...v1.4.0) (2025-10-08)
 
 
