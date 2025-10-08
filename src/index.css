@@ -77,6 +77,17 @@ textarea {
   transition: all 0.2s ease-in-out;
 }
 
+/* Slower pulse animation - override Tailwind's default 2s with 3s */
+.animate-pulse {
+  animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Child-friendly slider styles */
 .slider-container {
   position: relative;

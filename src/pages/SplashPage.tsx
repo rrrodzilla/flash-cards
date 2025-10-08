@@ -27,7 +27,7 @@ export default function SplashPage() {
         <div className="flex items-center justify-center gap-3 mb-4">
           <Sparkles
             size={48}
-            className="text-yellow-300 animate-[spin_3s_ease-in-out_infinite,pulse_2s_ease-in-out_infinite,float_3s_ease-in-out_infinite] origin-center"
+            className="text-yellow-300 animate-[spin_3s_ease-in-out_infinite,pulse_3s_ease-in-out_infinite,float_3s_ease-in-out_infinite] origin-center"
             style={{
               textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
               animationDelay: '0s',
@@ -38,7 +38,7 @@ export default function SplashPage() {
           </h1>
           <Sparkles
             size={48}
-            className="text-yellow-300 animate-[spin_3s_ease-in-out_infinite,pulse_2s_ease-in-out_infinite,float_3s_ease-in-out_infinite] origin-center"
+            className="text-yellow-300 animate-[spin_3s_ease-in-out_infinite,pulse_3s_ease-in-out_infinite,float_3s_ease-in-out_infinite] origin-center"
             style={{
               textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)',
               animationDelay: '0.6s',
@@ -63,7 +63,7 @@ export default function SplashPage() {
       >
         <button
           onClick={() => navigate('/users')}
-          className="flex items-center justify-center gap-3 w-full bg-gradient-to-br from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-10 py-6 rounded-3xl text-2xl font-black shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-95 transition-all duration-200 min-h-[80px] border-4 border-white/30 animate-[pulse_2s_ease-in-out_infinite]"
+          className="flex items-center justify-center gap-3 w-full bg-gradient-to-br from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white px-10 py-6 rounded-3xl text-2xl font-black shadow-2xl hover:shadow-3xl hover:scale-105 active:scale-95 transition-all duration-200 min-h-[80px] border-4 border-white/30 animate-pulse"
           aria-label="Go to users page"
         >
           <Gamepad2 size={28} />
